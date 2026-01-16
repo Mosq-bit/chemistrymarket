@@ -38,7 +38,7 @@ header {
 
         .nav-links {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             gap: 10px;
         }
@@ -88,3 +88,4 @@ header {
             position: relative;
             z-index: 1001;
         }
+
