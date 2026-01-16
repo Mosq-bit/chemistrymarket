@@ -1,0 +1,18 @@
+:root {
+  --primary-dark: #0a2463;
+  --primary-blue: #1e3a8a;
+  --accent-blue: #3b82f6;
+  --accent-teal: #06d6a0;
+  --light-gray: #f8fafc;
+  --medium-gray: #e2e8f0;
+  --dark-gray: #475569;
+  --text-dark: #1e293b;
+  --white: #ffffff;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --radius: 8px;
+}
+
+/* :hover{
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+} */

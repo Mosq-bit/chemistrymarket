@@ -1,0 +1,105 @@
+.logo-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 0;
+            margin: 20px 0;
+        }
+
+        .logo {
+            text-align: center;
+            position: relative;
+        }
+
+        .molecule {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 25px;
+        }
+
+        .atom.core {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            animation: pulse 2s infinite alternate;
+        }
+
+        .bond {
+            position: absolute;
+            background: var(--accent-blue);
+            height: 3px;
+            width: 80px;
+            top: 50%;
+            left: 50%;
+            transform-origin: left center;
+        }
+
+        .bond-1 { transform: translate(0, -50%) rotate(0deg); }
+        .bond-2 { transform: translate(0, -50%) rotate(120deg); }
+        .bond-3 { transform: translate(0, -50%) rotate(240deg); }
+
+        .electron {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: var(--accent-teal);
+            border-radius: 50%;
+            animation: orbit 6s linear infinite;
+        }
+
+        .e-1 { 
+            top: -8px; 
+            left: 40px;
+            animation-delay: 0s;
+        }
+        .e-2 { 
+            top: 56px; 
+            left: 96px;
+            animation-delay: -2s;
+        }
+        .e-3 { 
+            top: 56px; 
+            left: -16px;
+            animation-delay: -4s;
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            100% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(60px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(60px) rotate(-360deg); }
+        }
+
+        .logo-text {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary-dark), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-accent {
+            color: var(--accent-teal);
+        }
+
+        .tagline {
+            font-family: 'Open Sans', sans-serif;
+            font-size: 1.2rem;
+            color: var(--medium-gray);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
