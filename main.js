@@ -1,251 +1,128 @@
-
-        class ChemistryMarketAPI {
+ class ChemistryMarketAPI {
             constructor() {
-                this.baseURL = 'https://api.chemistrymarket.com/v1'; // Change to your API endpoint
+                this.baseURL = 'https://api.chemistrymarket.com/v1';
                 this.cache = new Map();
-                this.cacheDuration = 300000; // 5 minutes
                 this.currentPage = 1;
                 this.perPage = 12;
                 this.filters = {
                     category: 'all',
                     search: '',
                     cas: '',
-                    minStock: 0
+                    minStock: 0,
+                    sortBy: ''
                 };
             }
             
-            async request(endpoint, params = {}) {
-                try {
-                    const url = new URL(`${this.baseURL}${endpoint}`);
-                    
-                    // Add query parameters
-                    Object.keys(params).forEach(key => {
-                        if (params[key] !== undefined && params[key] !== '') {
-                            url.searchParams.append(key, params[key]);
-                        }
-                    });
-                    
-                    // Check cache
-                    const cacheKey = url.toString();
-                    const cached = this.cache.get(cacheKey);
-                    
-                    if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
-                        console.log('Using cached data:', endpoint);
-                        return cached.data;
-                    }
-                    
-                    // For demo purposes - simulate API response
-                    if (this.baseURL.includes('demo')) {
-                        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
-                        return this.getDemoData(endpoint, params);
-                    }
-                    
-                    // Real API request
-                    const response = await fetch(url, {
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer YOUR_API_TOKEN' // Add your API token
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`API Error: ${response.status}`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    // Cache the response
-                    this.cache.set(cacheKey, {
-                        timestamp: Date.now(),
-                        data: data
-                    });
-                    
-                    return data;
-                    
-                } catch (error) {
-                    console.error('API Request Error:', error);
-                    // Fallback to demo data
-                    return this.getDemoData(endpoint, params);
-                }
-            }
-            
-            // Demo data for testing
-            getDemoData(endpoint, params) {
-                if (endpoint === '/categories') {
-                    return {
-                        success: true,
-                        data: [
-                            { name: 'Промышленная химия', count: 1500, slug: 'industrial' },
-                            { name: 'Сырье для ЛКМ', count: 800, slug: 'paint' },
-                            { name: 'Нефтегазовая химия', count: 600, slug: 'oil' },
-                            { name: 'Пищевые добавки', count: 400, slug: 'food' },
-                            { name: 'Реагенты для водоочистки', count: 300, slug: 'water' },
-                            { name: 'Лабораторные реактивы', count: 200, slug: 'lab' },
-                            { name: 'Фармацевтические субстанции', count: 150, slug: 'pharma' }
-                        ]
-                    };
-                }
+            async getDemoProducts(page = 1) {
+                // Имитация задержки API
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
-                if (endpoint === '/products') {
-                    const demoProducts = this.generateDemoProducts(params.page || 1, params.per_page || 12);
-                    return {
-                        success: true,
-                        data: {
-                            products: demoProducts,
-                            pagination: {
-                                page: params.page || 1,
-                                per_page: params.per_page || 12,
-                                total: 4000,
-                                total_pages: Math.ceil(4000 / (params.per_page || 12))
-                            }
-                        }
-                    };
-                }
-                
-                return { success: true, data: [] };
-            }
-            
-            generateDemoProducts(page, perPage) {
-                const categories = ['industrial', 'paint', 'oil', 'food', 'water', 'lab', 'pharma'];
-                const names = [
-                    'Серная кислота техническая', 'Гидроксид натрия', 'Ацетон технический',
-                    'Диоксид титана рутильный', 'Карбонат кальция осажденный', 'Соляная кислота',
-                    'Азотная кислота', 'Перекись водорода', 'Метилэтилкетон', 'Толуол',
-                    'Ксилол', 'Уайт-спирит', 'Этилацетат', 'Бутилацетат', 'Изопропанол',
-                    'Этиленгликоль', 'Пропиленгликоль', 'Глицерин технический', 'Сода каустическая',
-                    'Сода кальцинированная', 'Гипохлорит натрия', 'Сульфат алюминия', 'Хлорное железо',
-                    'Полиакриламид', 'Бентонит', 'Каолин', 'Тальк', 'Слюда', 'Барит'
-                ];
-                
-                const casNumbers = [
-                    '7664-93-9', '1310-73-2', '67-64-1', '13463-67-7', '471-34-1',
-                    '7647-01-0', '7697-37-2', '7722-84-1', '78-93-3', '108-88-3',
-                    '1330-20-7', '64742-82-1', '141-78-6', '123-86-4', '67-63-0',
-                    '107-21-1', '57-55-6', '56-81-5', '1310-73-2', '497-19-8',
-                    '7681-52-9', '10043-01-3', '7705-08-0', '9003-05-8', '1302-78-9',
-                    '1332-58-7', '14807-96-6', '12001-26-2', '7727-43-7'
+                const categories = [
+                    { id: 'industrial', name: 'Промышленная химия', count: 1500 },
+                    { id: 'paint', name: 'Сырье для ЛКМ', count: 800 },
+                    { id: 'oil', name: 'Нефтегазовая химия', count: 600 },
+                    { id: 'food', name: 'Пищевые добавки', count: 400 },
+                    { id: 'water', name: 'Реагенты для водоочистки', count: 300 },
+                    { id: 'lab', name: 'Лабораторные реактивы', count: 200 }
                 ];
                 
                 const products = [];
-                const startIndex = (page - 1) * perPage;
+                const startIdx = (page - 1) * this.perPage;
                 
-                for (let i = 0; i < perPage; i++) {
+                for (let i = 0; i < this.perPage; i++) {
                     const category = categories[Math.floor(Math.random() * categories.length)];
-                    const name = names[Math.floor(Math.random() * names.length)];
-                    const cas = casNumbers[Math.floor(Math.random() * casNumbers.length)];
-                    
                     products.push({
-                        id: startIndex + i + 1,
-                        name: name,
-                        cas: cas,
-                        formula: this.getFormulaForName(name),
-                        category: category,
-                        category_name: this.getCategoryName(category),
-                        purity: `${Math.floor(Math.random() * 30) + 70}%`,
-                        packaging: this.getRandomPackaging(),
+                        id: startIdx + i + 1,
+                        name: this.getRandomProductName(),
+                        cas: this.getRandomCAS(),
+                        formula: this.getRandomFormula(),
+                        category: category.id,
+                        category_name: category.name,
+                        purity: `${Math.floor(Math.random() * 20) + 80}%`,
+                        packaging: ['Канистра 25л', 'Бочка 200л', 'Мешок 25кг', 'Биг-бэг 1000кг'][Math.floor(Math.random() * 4)],
                         unit: 'кг',
                         price: (Math.random() * 500 + 50).toFixed(2),
                         stock: Math.floor(Math.random() * 10000),
-                        supplier: this.getRandomSupplier(),
-                        description: `${name} — химическое сырье для промышленного применения. CAS номер: ${cas}. Высокая степень очистки, соответствует техническим требованиям.`,
-                        specifications: {
-                            'Внешний вид': 'Жидкость/Порошок/Гранулы',
-                            'Плотность': `${(Math.random() * 2 + 0.5).toFixed(2)} г/см³`,
-                            'Температура плавления': `${Math.floor(Math.random() * 200)}°C`,
-                            'Растворимость': 'Вода/Спирт/Органические растворители'
+                        supplier: ['BASF', 'Dow', 'Sibur', 'Evonik'][Math.floor(Math.random() * 4)],
+                        description: 'Высококачественное химическое сырье для промышленного применения.'
+                    });
+                }
+                
+                // Применяем фильтры
+                let filtered = products.filter(p => {
+                    if (this.filters.category !== 'all' && p.category !== this.filters.category) return false;
+                    if (this.filters.search && !p.name.toLowerCase().includes(this.filters.search.toLowerCase())) return false;
+                    if (this.filters.cas && !p.cas.includes(this.filters.cas)) return false;
+                    if (this.filters.minStock && p.stock < this.filters.minStock) return false;
+                    return true;
+                });
+                
+                // Сортировка
+                if (this.filters.sortBy) {
+                    filtered.sort((a, b) => {
+                        switch (this.filters.sortBy) {
+                            case 'name_asc': return a.name.localeCompare(b.name);
+                            case 'name_desc': return b.name.localeCompare(a.name);
+                            case 'price_asc': return a.price - b.price;
+                            case 'price_desc': return b.price - a.price;
+                            default: return 0;
                         }
                     });
                 }
                 
-                // Apply filters
-                return products.filter(product => {
-                    if (this.filters.category !== 'all' && product.category !== this.filters.category) return false;
-                    if (this.filters.search && !product.name.toLowerCase().includes(this.filters.search.toLowerCase())) return false;
-                    if (this.filters.cas && !product.cas.includes(this.filters.cas)) return false;
-                    if (this.filters.minStock && product.stock < this.filters.minStock) return false;
-                    return true;
-                });
-            }
-            
-            getFormulaForName(name) {
-                const formulas = {
-                    'Серная кислота': 'H₂SO₄',
-                    'Гидроксид натрия': 'NaOH',
-                    'Ацетон': 'C₃H₆O',
-                    'Диоксид титана': 'TiO₂',
-                    'Карбонат кальция': 'CaCO₃',
-                    'Соляная кислота': 'HCl',
-                    'Азотная кислота': 'HNO₃',
-                    'Перекись водорода': 'H₂O₂'
+                return {
+                    products: filtered,
+                    pagination: {
+                        page: page,
+                        per_page: this.perPage,
+                        total: 4000,
+                        total_pages: Math.ceil(4000 / this.perPage)
+                    }
                 };
-                
-                for (const [key, formula] of Object.entries(formulas)) {
-                    if (name.includes(key)) return formula;
-                }
-                return '';
             }
             
-            getCategoryName(category) {
-                const names = {
-                    'industrial': 'Промышленная химия',
-                    'paint': 'Сырье для ЛКМ',
-                    'oil': 'Нефтегазовая химия',
-                    'food': 'Пищевые добавки',
-                    'water': 'Реагенты для водоочистки',
-                    'lab': 'Лабораторные реактивы',
-                    'pharma': 'Фармацевтические субстанции'
-                };
-                return names[category] || category;
+            getRandomProductName() {
+                const names = [
+                    'Серная кислота техническая', 'Гидроксид натрия', 'Ацетон',
+                    'Диоксид титана рутильный', 'Карбонат кальция', 'Соляная кислота',
+                    'Азотная кислота', 'Перекись водорода', 'Толуол', 'Ксилол',
+                    'Уайт-спирит', 'Этилацетат', 'Изопропанол', 'Этиленгликоль',
+                    'Глицерин', 'Гипохлорит натрия', 'Сульфат алюминия', 'Полиакриламид'
+                ];
+                return names[Math.floor(Math.random() * names.length)];
             }
             
-            getRandomPackaging() {
-                const packagings = ['Канистра 25 л', 'Бочка 200 л', 'Мешок 25 кг', 'Биг-бэг 1000 кг', 'Бутыль 5 л', 'Флакон 1 л'];
-                return packagings[Math.floor(Math.random() * packagings.length)];
+            getRandomCAS() {
+                const casNumbers = [
+                    '7664-93-9', '1310-73-2', '67-64-1', '13463-67-7', '471-34-1',
+                    '7647-01-0', '7697-37-2', '7722-84-1', '108-88-3', '1330-20-7'
+                ];
+                return casNumbers[Math.floor(Math.random() * casNumbers.length)];
             }
             
-            getRandomSupplier() {
-                const suppliers = ['BASF', 'Dow', 'Sibur', 'Evonik', 'AkzoNobel', 'Clariant', 'Lanxess', 'Solvay'];
-                return suppliers[Math.floor(Math.random() * suppliers.length)];
+            getRandomFormula() {
+                const formulas = ['H₂SO₄', 'NaOH', 'C₃H₆O', 'TiO₂', 'CaCO₃', 'HCl', 'HNO₃', 'H₂O₂', 'C₇H₈', 'C₈H₁₀'];
+                return formulas[Math.floor(Math.random() * formulas.length)];
             }
             
-            // Public methods
             async getCategories() {
-                const response = await this.request('/categories');
-                return response.data || [];
-            }
-            
-            async getProducts(page = 1, filters = {}) {
-                this.currentPage = page;
-                this.filters = { ...this.filters, ...filters };
-                
-                const params = {
-                    page: page,
-                    per_page: this.perPage,
-                    ...this.filters
-                };
-                
-                const response = await this.request('/products', params);
-                return response.data || { products: [], pagination: {} };
-            }
-            
-            async searchProducts(query, limit = 10) {
-                const response = await this.request('/search', { q: query, limit: limit });
-                return response.data || [];
-            }
-            
-            clearCache() {
-                this.cache.clear();
+                await new Promise(resolve => setTimeout(resolve, 100));
+                return [
+                    { id: 'industrial', name: 'Промышленная химия', count: 1500 },
+                    { id: 'paint', name: 'Сырье для ЛКМ', count: 800 },
+                    { id: 'oil', name: 'Нефтегазовая химия', count: 600 },
+                    { id: 'food', name: 'Пищевые добавки', count: 400 },
+                    { id: 'water', name: 'Реагенты для водоочистки', count: 300 },
+                    { id: 'lab', name: 'Лабораторные реактивы', count: 200 },
+                    { id: 'pharma', name: 'Фармацевтические субстанции', count: 150 }
+                ];
             }
         }
 
-        // ==================== UI MANAGER ====================
-        class UIManager {
+        class ProductManager {
             constructor() {
                 this.api = new ChemistryMarketAPI();
                 this.currentPage = 1;
-                this.totalPages = 1;
-                this.searchTimeout = null;
             }
             
             async init() {
@@ -259,20 +136,27 @@
                     const categories = await this.api.getCategories();
                     const container = document.getElementById('categoriesList');
                     
-                    // Clear existing (except "All")
-                    const allButton = container.querySelector('button[data-category="all"]').parentNode;
-                    container.innerHTML = '';
-                    container.appendChild(allButton);
+                    // Добавляем "Все товары"
+                    const allItem = document.createElement('li');
+                    allItem.innerHTML = `
+                        <button class="active" data-category="all">
+                            Все товары
+                            <span class="category-count">4000</span>
+                        </button>
+                    `;
+                    allItem.querySelector('button').onclick = () => this.filterByCategory('all');
+                    container.appendChild(allItem);
                     
-                    // Add categories
-                    categories.forEach(category => {
+                    // Добавляем категории
+                    categories.forEach(cat => {
                         const li = document.createElement('li');
-                        const button = document.createElement('button');
-                        button.textContent = `${category.name} (${category.count})`;
-                        button.dataset.category = category.slug;
-                        button.onclick = () => this.filterByCategory(category.slug);
-                        
-                        li.appendChild(button);
+                        li.innerHTML = `
+                            <button data-category="${cat.id}">
+                                ${cat.name}
+                                <span class="category-count">${cat.count}</span>
+                            </button>
+                        `;
+                        li.querySelector('button').onclick = () => this.filterByCategory(cat.id);
                         container.appendChild(li);
                     });
                     
@@ -284,30 +168,42 @@
             async loadProducts(page = 1) {
                 try {
                     const container = document.getElementById('productsGrid');
-                    container.innerHTML = `
-                        <div class="loading">
-                            <div class="loading-spinner"></div>
-                            <p>Загрузка товаров...</p>
-                        </div>
-                    `;
                     
-                    const { products, pagination } = await this.api.getProducts(page);
+                    // Показываем скелетон загрузки
+                    container.innerHTML = this.getLoadingSkeleton();
                     
-                    this.currentPage = pagination.page;
-                    this.totalPages = pagination.total_pages;
+                    const data = await this.api.getDemoProducts(page);
+                    this.currentPage = page;
                     
-                    this.renderProducts(products);
-                    this.renderPagination(pagination);
+                    this.renderProducts(data.products);
+                    this.renderPagination(data.pagination);
                     
                 } catch (error) {
                     console.error('Error loading products:', error);
-                    const container = document.getElementById('productsGrid');
-                    container.innerHTML = `
-                        <div class="loading">
-                            <p style="color: #dc2626;">Ошибка загрузки данных. Пожалуйста, попробуйте позже.</p>
+                    this.showError();
+                }
+            }
+            
+            getLoadingSkeleton() {
+                let skeleton = '';
+                for (let i = 0; i < this.api.perPage; i++) {
+                    skeleton += `
+                        <div class="product-card" style="opacity: 0.7;">
+                            <div class="product-header">
+                                <div style="height: 24px; background: var(--medium-gray); border-radius: 4px; margin-bottom: 10px; width: 70%;"></div>
+                                <div style="height: 16px; background: var(--medium-gray); border-radius: 4px; width: 50%;"></div>
+                            </div>
+                            <div class="product-body">
+                                <div style="height: 60px; background: var(--medium-gray); border-radius: 4px; margin-bottom: 20px;"></div>
+                                <div class="product-specs">
+                                    <div style="height: 40px; background: var(--medium-gray); border-radius: 4px;"></div>
+                                    <div style="height: 40px; background: var(--medium-gray); border-radius: 4px;"></div>
+                                </div>
+                            </div>
                         </div>
                     `;
                 }
+                return skeleton;
             }
             
             renderProducts(products) {
@@ -315,11 +211,13 @@
                 
                 if (products.length === 0) {
                     container.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 60px;">
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
                             <i class="fas fa-search" style="font-size: 3rem; color: var(--dark-gray); margin-bottom: 20px;"></i>
-                            <h3 style="color: var(--accent-teal);">Товары не найдены</h3>
-                            <p style="color: var(--dark-gray);">Попробуйте изменить параметры поиска</p>
-                            <button onclick="resetFilters()" class="btn" style="margin-top: 20px;">Сбросить фильтры</button>
+                            <h3 style="color: var(--accent-teal); margin-bottom: 10px;">Товары не найдены</h3>
+                            <p style="color: var(--dark-gray); margin-bottom: 20px;">Попробуйте изменить параметры поиска или выбрать другую категорию</p>
+                            <button onclick="productManager.resetFilters()" class="btn">
+                                <i class="fas fa-redo"></i> Сбросить фильтры
+                            </button>
                         </div>
                     `;
                     return;
@@ -332,18 +230,23 @@
                     card.className = 'product-card';
                     card.innerHTML = `
                         <div class="product-header">
-                            <h3 style="margin-bottom: 5px; color: var(--accent-teal);">${product.name}</h3>
-                            ${product.cas ? `<p style="color: var(--dark-gray); font-size: 0.9rem; margin-bottom: 10px;"><strong>CAS:</strong> ${product.cas}</p>` : ''}
-                            ${product.formula ? `<p style="color: var(--dark-gray); font-size: 0.9rem;"><strong>Формула:</strong> ${product.formula}</p>` : ''}
+                            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3;">${product.name}</h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.85rem; color: var(--light-gray);">
+                                    <i class="fas fa-tag"></i> ${product.category_name}
+                                </span>
+                                <span style="font-size: 0.85rem; color: var(--accent-blue); font-weight: 600;">
+                                    <i class="fas fa-hashtag"></i> ${product.cas}
+                                </span>
+                            </div>
                         </div>
                         <div class="product-body">
-                            <p style="color: var(--text-dark); margin-bottom: 15px; font-size: 0.95rem;">${product.description}</p>
+                            <p style="color: var(--text-dark); margin-bottom: 15px; font-size: 0.95rem; flex-grow: 1;">
+                                ${product.description}
+                                ${product.formula ? `<br><strong>Формула:</strong> ${product.formula}` : ''}
+                            </p>
                             
                             <div class="product-specs">
-                                <div class="spec-item">
-                                    <span class="spec-label">Категория</span>
-                                    <span class="spec-value">${product.category_name || product.category}</span>
-                                </div>
                                 <div class="spec-item">
                                     <span class="spec-label">Чистота</span>
                                     <span class="spec-value">${product.purity}</span>
@@ -356,13 +259,17 @@
                                     <span class="spec-label">Остаток</span>
                                     <span class="spec-value">${product.stock.toLocaleString()} ${product.unit}</span>
                                 </div>
+                                <div class="spec-item">
+                                    <span class="spec-label">Цена</span>
+                                    <span class="spec-value">${product.price} ₽/${product.unit}</span>
+                                </div>
                             </div>
                             
                             <div class="product-actions">
-                                <button onclick="requestQuote(${product.id})" class="btn">
-                                    <i class="fas fa-quote-left"></i> Запросить цену
+                                <button onclick="requestQuote(${product.id})" class="btn" style="background: var(--primary-blue);">
+                                    <i class="fas fa-quote-left"></i> Запрос
                                 </button>
-                                <button onclick="showProductDetails(${product.id})" class="btn btn-outline">
+                                <button onclick="showDetails(${product.id})" class="btn btn-outline">
                                     <i class="fas fa-info-circle"></i> Подробнее
                                 </button>
                             </div>
@@ -375,50 +282,55 @@
             renderPagination(pagination) {
                 const container = document.getElementById('pagination');
                 
-                if (pagination.total_pages <= 1) {
+                if (!pagination || pagination.total_pages <= 1) {
                     container.innerHTML = '';
                     return;
                 }
                 
                 let html = '';
-                const maxPagesToShow = 5;
-                let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
-                let endPage = Math.min(pagination.total_pages, startPage + maxPagesToShow - 1);
+                const maxVisible = 5;
+                let start = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+                let end = Math.min(pagination.total_pages, start + maxVisible - 1);
                 
-                if (endPage - startPage + 1 < maxPagesToShow) {
-                    startPage = Math.max(1, endPage - maxPagesToShow + 1);
+                if (end - start + 1 < maxVisible) {
+                    start = Math.max(1, end - maxVisible + 1);
                 }
                 
-                // Previous button
+                // Предыдущая страница
                 if (this.currentPage > 1) {
-                    html += `<button class="page-btn" onclick="uiManager.goToPage(${this.currentPage - 1})">
+                    html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage - 1})">
                                 <i class="fas fa-chevron-left"></i>
                             </button>`;
                 }
                 
-                // First page
-                if (startPage > 1) {
-                    html += `<button class="page-btn" onclick="uiManager.goToPage(1)">1</button>`;
-                    if (startPage > 2) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
+                // Первая страница
+                if (start > 1) {
+                    html += `<button class="page-btn" onclick="productManager.goToPage(1)">1</button>`;
+                    if (start > 2) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
                 }
                 
-                // Page numbers
-                for (let i = startPage; i <= endPage; i++) {
-                    html += `<button class="page-btn ${i === this.currentPage ? 'active' : ''}" onclick="uiManager.goToPage(${i})">${i}</button>`;
+                // Страницы
+                for (let i = start; i <= end; i++) {
+                    html += `<button class="page-btn ${i === this.currentPage ? 'active' : ''}" onclick="productManager.goToPage(${i})">${i}</button>`;
                 }
                 
-                // Last page
-                if (endPage < pagination.total_pages) {
-                    if (endPage < pagination.total_pages - 1) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
-                    html += `<button class="page-btn" onclick="uiManager.goToPage(${pagination.total_pages})">${pagination.total_pages}</button>`;
+                // Последняя страница
+                if (end < pagination.total_pages) {
+                    if (end < pagination.total_pages - 1) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
+                    html += `<button class="page-btn" onclick="productManager.goToPage(${pagination.total_pages})">${pagination.total_pages}</button>`;
                 }
                 
-                // Next button
+                // Следующая страница
                 if (this.currentPage < pagination.total_pages) {
-                    html += `<button class="page-btn" onclick="uiManager.goToPage(${this.currentPage + 1})">
+                    html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage + 1})">
                                 <i class="fas fa-chevron-right"></i>
                             </button>`;
                 }
+                
+                // Информация о странице
+                html += `<div style="margin-left: 15px; color: var(--dark-gray); font-size: 0.9rem;">
+                            Страница ${this.currentPage} из ${pagination.total_pages}
+                         </div>`;
                 
                 container.innerHTML = html;
             }
@@ -430,8 +342,8 @@
             }
             
             filterByCategory(category) {
-                // Update active button
-                document.querySelectorAll('.category-list button').forEach(btn => {
+                // Обновляем активную кнопку
+                document.querySelectorAll('#categoriesList button').forEach(btn => {
                     btn.classList.remove('active');
                     if (btn.dataset.category === category) {
                         btn.classList.add('active');
@@ -442,191 +354,196 @@
                 this.loadProducts(1);
             }
             
+            async applyFilters() {
+                const search = document.getElementById('searchInput').value;
+                const cas = document.getElementById('casFilter').value;
+                const minStock = document.getElementById('minStock').value;
+                const sortBy = document.getElementById('sortBy').value;
+                
+                this.api.filters = {
+                    ...this.api.filters,
+                    search: search,
+                    cas: cas,
+                    minStock: minStock ? parseInt(minStock) : 0,
+                    sortBy: sortBy
+                };
+                
+                await this.loadProducts(1);
+                
+                // На мобильных закрываем фильтры после применения
+                if (window.innerWidth <= 992) {
+                    this.toggleMobileFilters();
+                }
+            }
+            
+            resetFilters() {
+                // Сбрасываем поля
+                document.getElementById('searchInput').value = '';
+                document.getElementById('casFilter').value = '';
+                document.getElementById('minStock').value = '';
+                document.getElementById('sortBy').value = '';
+                
+                // Сбрасываем категорию
+                document.querySelectorAll('#categoriesList button').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.category === 'all') {
+                        btn.classList.add('active');
+                    }
+                });
+                
+                // Сбрасываем фильтры в API
+                this.api.filters = {
+                    category: 'all',
+                    search: '',
+                    cas: '',
+                    minStock: 0,
+                    sortBy: ''
+                };
+                
+                this.loadProducts(1);
+            }
+            
+            showError() {
+                const container = document.getElementById('productsGrid');
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 20px;"></i>
+                        <h3 style="color: var(--accent-teal); margin-bottom: 10px;">Ошибка загрузки</h3>
+                        <p style="color: var(--light-gray); margin-bottom: 20px;">Не удалось загрузить каталог. Пожалуйста, попробуйте позже.</p>
+                        <button onclick="productManager.loadProducts(1)" class="btn">
+                            <i class="fas fa-sync-alt"></i> Попробовать снова
+                        </button>
+                    </div>
+                `;
+            }
+            
+            toggleMobileFilters() {
+                const sidebar = document.getElementById('filtersSidebar');
+                const toggleBtn = document.getElementById('mobileFiltersToggle');
+                
+                if (sidebar.classList.contains('hidden-on-mobile')) {
+                    sidebar.classList.remove('hidden-on-mobile');
+                    sidebar.classList.add('visible-on-mobile');
+                    toggleBtn.innerHTML = '<i class="fas fa-times"></i> Закрыть фильтры';
+                } else {
+                    sidebar.classList.remove('visible-on-mobile');
+                    sidebar.classList.add('hidden-on-mobile');
+                    toggleBtn.innerHTML = '<i class="fas fa-filter"></i> Фильтры';
+                }
+            }
+            
             setupEventListeners() {
-                // Search input with debounce
-                const searchInput = document.getElementById('searchInput');
-                searchInput.addEventListener('input', (e) => {
-                    clearTimeout(this.searchTimeout);
-                    this.searchTimeout = setTimeout(() => {
-                        this.api.filters.search = e.target.value;
-                        this.loadProducts(1);
+                // Поиск с debounce
+                let searchTimeout;
+                document.getElementById('searchInput').addEventListener('input', (e) => {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        this.applyFilters();
                     }, 500);
                 });
                 
-                // CAS filter
-                const casFilter = document.getElementById('casFilter');
-                casFilter.addEventListener('input', (e) => {
-                    this.api.filters.cas = e.target.value;
+                // Изменение других фильтров
+                document.getElementById('casFilter').addEventListener('input', () => this.applyFilters());
+                document.getElementById('minStock').addEventListener('input', () => this.applyFilters());
+                document.getElementById('sortBy').addEventListener('change', () => this.applyFilters());
+                
+                // Мобильный переключатель фильтров
+                document.getElementById('mobileFiltersToggle').addEventListener('click', () => {
+                    this.toggleMobileFilters();
                 });
                 
-                // Min stock filter
-                const minStock = document.getElementById('minStock');
-                minStock.addEventListener('input', (e) => {
-                    this.api.filters.minStock = e.target.value ? parseInt(e.target.value) : 0;
+                // Закрытие фильтров при клике вне их (для мобильных)
+                document.addEventListener('click', (e) => {
+                    const sidebar = document.getElementById('filtersSidebar');
+                    const toggleBtn = document.getElementById('mobileFiltersToggle');
+                    
+                    if (window.innerWidth <= 992 && 
+                        !sidebar.contains(e.target) && 
+                        !toggleBtn.contains(e.target) &&
+                        sidebar.classList.contains('visible-on-mobile')) {
+                        this.toggleMobileFilters();
+                    }
                 });
                 
-                // Contact form
-                const contactForm = document.getElementById('contactForm');
-                contactForm.addEventListener('submit', async (e) => {
-                    e.preventDefault();
+                // Ресайз окна
+                window.addEventListener('resize', () => {
+                    const sidebar = document.getElementById('filtersSidebar');
+                    const toggleBtn = document.getElementById('mobileFiltersToggle');
                     
-                    const formData = new FormData(contactForm);
-                    const data = Object.fromEntries(formData.entries());
-                    
-                    // Show loading
-                    const submitBtn = contactForm.querySelector('button[type="submit"]');
-                    const originalText = submitBtn.textContent;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
-                    submitBtn.disabled = true;
-                    
-                    try {
-                        // Simulate API call
-                        await new Promise(resolve => setTimeout(resolve, 1500));
-                        
-                        // Success
-                        alert(`Спасибо, ${data.name}! Ваш запрос отправлен. Наш менеджер свяжется с вами в течение 30 минут.`);
-                        contactForm.reset();
-                        
-                    } catch (error) {
-                        alert('Ошибка отправки формы. Пожалуйста, попробуйте позже или позвоните нам.');
-                    } finally {
-                        submitBtn.textContent = originalText;
-                        submitBtn.disabled = false;
+                    // На больших экранах всегда показываем фильтры
+                    if (window.innerWidth > 992) {
+                        sidebar.classList.remove('hidden-on-mobile', 'visible-on-mobile');
+                        toggleBtn.innerHTML = '<i class="fas fa-filter"></i> Фильтры';
                     }
                 });
             }
         }
 
-        // ==================== GLOBAL FUNCTIONS ====================
-        let uiManager;
-
-        function applyFilters() {
-            const casFilter = document.getElementById('casFilter').value;
-            const minStock = document.getElementById('minStock').value;
-            
-            uiManager.api.filters.cas = casFilter;
-            uiManager.api.filters.minStock = minStock ? parseInt(minStock) : 0;
-            uiManager.loadProducts(1);
-        }
-
-        function resetFilters() {
-            // Reset form inputs
-            document.getElementById('searchInput').value = '';
-            document.getElementById('casFilter').value = '';
-            document.getElementById('minStock').value = '';
-            
-            // Reset category
-            document.querySelectorAll('.category-list button').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.dataset.category === 'all') {
-                    btn.classList.add('active');
-                }
-            });
-            
-            // Reset API filters
-            uiManager.api.filters = {
-                category: 'all',
-                search: '',
-                cas: '',
-                minStock: 0
-            };
-            
-            uiManager.loadProducts(1);
-        }
-
+        // Глобальные функции
         function requestQuote(productId) {
-            // Show modal or redirect to contact form with product info
-            const productInput = document.getElementById('product');
-            if (productInput) {
-                // In real app, you would fetch product name from API
-                productInput.value = `Товар #${productId}`;
-            }
-            
-            // Scroll to contact form
-            document.getElementById('contact').scrollIntoView({ behavior: 'smooth' });
+            alert(`Запрос цены на товар #${productId}\n\nФорма запроса откроется в следующей версии.`);
         }
 
-        function showProductDetails(productId) {
-            // In real app, this would open a modal or redirect to product page
-            alert(`Детальная информация о товаре #${productId}\n\nВ реальном приложении здесь будет открываться страница товара с полным описанием, техническими характеристиками, документацией и формой запроса.`);
+        function showDetails(productId) {
+            alert(`Детальная информация о товаре #${productId}\n\nВ полной версии будет открываться страница товара.`);
         }
 
-        // ==================== MOBILE MENU ====================
-        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        const navLinks = document.getElementById('navLinks');
-        const menuIcon = document.getElementById('menuIcon');
+        // Инициализация
+        let productManager;
 
-        mobileMenuBtn.addEventListener('click', () => {
-            navLinks.classList.toggle('active');
-            
-            if (navLinks.classList.contains('active')) {
-                menuIcon.classList.remove('fa-bars');
-                menuIcon.classList.add('fa-times');
-            } else {
-                menuIcon.classList.remove('fa-times');
-                menuIcon.classList.add('fa-bars');
-            }
-        });
-
-        // Close mobile menu when clicking on a link
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            link.addEventListener('click', () => {
-                navLinks.classList.remove('active');
-                menuIcon.classList.remove('fa-times');
-                menuIcon.classList.add('fa-bars');
-            });
-        });
-
-        // ==================== INITIALIZATION ====================
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize UI Manager
-            uiManager = new UIManager();
-            uiManager.init();
+            productManager = new ProductManager();
+            productManager.init();
             
-            // Smooth scrolling for anchor links
+            // Мобильное меню
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const navLinks = document.getElementById('navLinks');
+            const menuIcon = document.getElementById('menuIcon');
+
+            mobileMenuBtn.addEventListener('click', () => {
+                navLinks.classList.toggle('active');
+                menuIcon.classList.toggle('fa-bars');
+                menuIcon.classList.toggle('fa-times');
+            });
+            
+            // Smooth scroll
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function(e) {
                     e.preventDefault();
-                    
                     const targetId = this.getAttribute('href');
                     if (targetId === '#') return;
                     
                     const targetElement = document.querySelector(targetId);
                     if (targetElement) {
                         window.scrollTo({
-                            top: targetElement.offsetTop - 100,
+                            top: targetElement.offsetTop - 80,
                             behavior: 'smooth'
                         });
+                        
+                        // Закрываем мобильное меню если открыто
+                        if (navLinks.classList.contains('active')) {
+                            navLinks.classList.remove('active');
+                            menuIcon.classList.remove('fa-times');
+                            menuIcon.classList.add('fa-bars');
+                        }
                     }
                 });
             });
             
-            // Sticky header on scroll
-            window.addEventListener('scroll', () => {
+            // Обновление заголовка при скролле
+            window.addEventListener('scroll', function() {
                 const header = document.querySelector('header');
-                if (window.scrollY > 100) {
-                    header.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.15)';
+                if (window.scrollY > 50) {
+                    header.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.1)';
                 } else {
-                    header.style.boxShadow = 'var(--shadow)';
+                    header.style.boxShadow = 'none';
                 }
             });
-            
-            // Auto-refresh products every 5 minutes
-            setInterval(() => {
-                uiManager.api.clearCache();
-                uiManager.loadProducts(uiManager.currentPage);
-            }, 5 * 60 * 1000);
-            
-            // Print company info
-            console.log('%c🚀 ChemistryMarket 🚀', 'font-size: 20px; font-weight: bold; color: #1e3a8a;');
-            console.log('%cПоставщик химического сырья с 2015 года', 'font-size: 14px; color: #475569;');
-            console.log('%cAPI Status: ✅ Ready', 'color: #06d6a0; font-weight: bold;');
         });
 
-        // ==================== WINDOW EXPORTS ====================
-        window.uiManager = uiManager;
-        window.applyFilters = applyFilters;
-        window.resetFilters = resetFilters;
+        // Экспорт в глобальную область видимости
+        window.productManager = productManager;
+        window.applyFilters = () => productManager.applyFilters();
+        window.resetFilters = () => productManager.resetFilters();
         window.requestQuote = requestQuote;
-
-        window.showProductDetails = showProductDetails;
+        window.showDetails = showDetails;
