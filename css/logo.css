@@ -86,7 +86,7 @@
             font-weight: 800;
             line-height: 1;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, var(--primary-dark), var(--accent-blue));
+            background: linear-gradient(358deg, var(--primary-dark), var(--accent-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -102,4 +102,5 @@
             color: var(--medium-gray);
             font-weight: 600;
             letter-spacing: 0.5px;
+
         }
