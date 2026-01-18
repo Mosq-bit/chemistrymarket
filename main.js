@@ -213,7 +213,7 @@
                     container.innerHTML = `
                         <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
                             <i class="fas fa-search" style="font-size: 3rem; color: var(--dark-gray); margin-bottom: 20px;"></i>
-                            <h3 style="color: var(--accent-teal); margin-bottom: 10px;">Товары не найдены</h3>
+                            <h3 style="color: var(--light-gray); margin-bottom: 10px;">Товары не найдены</h3>
                             <p style="color: var(--dark-gray); margin-bottom: 20px;">Попробуйте изменить параметры поиска или выбрать другую категорию</p>
                             <button onclick="productManager.resetFilters()" class="btn">
                                 <i class="fas fa-redo"></i> Сбросить фильтры
@@ -230,7 +230,7 @@
                     card.className = 'product-card';
                     card.innerHTML = `
                         <div class="product-header">
-                            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3;">${product.name}</h3>
+                            <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3;color: var(--light-gray);">${product.name}</h3>
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <span style="font-size: 0.85rem; color: var(--light-gray);">
                                     <i class="fas fa-tag"></i> ${product.category_name}
