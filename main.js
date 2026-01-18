@@ -1,4 +1,4 @@
- // ==================== API CLIENT ====================
+
         class ChemistryMarketAPI {
             constructor() {
                 this.baseURL = 'https://api.chemistrymarket.com/v1'; // Change to your API endpoint
@@ -317,7 +317,7 @@
                     container.innerHTML = `
                         <div style="grid-column: 1 / -1; text-align: center; padding: 60px;">
                             <i class="fas fa-search" style="font-size: 3rem; color: var(--dark-gray); margin-bottom: 20px;"></i>
-                            <h3 style="color: var(--primary-dark);">Товары не найдены</h3>
+                            <h3 style="color: var(--accent-teal);">Товары не найдены</h3>
                             <p style="color: var(--dark-gray);">Попробуйте изменить параметры поиска</p>
                             <button onclick="resetFilters()" class="btn" style="margin-top: 20px;">Сбросить фильтры</button>
                         </div>
@@ -332,7 +332,7 @@
                     card.className = 'product-card';
                     card.innerHTML = `
                         <div class="product-header">
-                            <h3 style="margin-bottom: 5px; color: var(--primary-dark);">${product.name}</h3>
+                            <h3 style="margin-bottom: 5px; color: var(--accent-teal);">${product.name}</h3>
                             ${product.cas ? `<p style="color: var(--dark-gray); font-size: 0.9rem; margin-bottom: 10px;"><strong>CAS:</strong> ${product.cas}</p>` : ''}
                             ${product.formula ? `<p style="color: var(--dark-gray); font-size: 0.9rem;"><strong>Формула:</strong> ${product.formula}</p>` : ''}
                         </div>
@@ -628,4 +628,5 @@
         window.applyFilters = applyFilters;
         window.resetFilters = resetFilters;
         window.requestQuote = requestQuote;
+
         window.showProductDetails = showProductDetails;
