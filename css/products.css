@@ -64,7 +64,7 @@
 
 .filter-group h4 {
     margin-bottom: 15px;
-    color: var(--primary-dark);
+    color: var(--accent-teal);
     font-size: 1.1rem;
     display: flex;
     align-items: center;
@@ -531,3 +531,4 @@
         margin-bottom: 20px;
     }
 }
+
