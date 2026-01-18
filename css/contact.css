@@ -11,6 +11,10 @@
         .contact-info {
             flex: 1;
             min-width: 300px;
+
+            h3{
+                color: var(--primary-dark);
+            }
         }
 
         .contact-details {
@@ -43,6 +47,10 @@
             padding: 40px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
+
+             h3{
+                color: var(--primary-dark);
+            }
         }
 
         .form-group {
