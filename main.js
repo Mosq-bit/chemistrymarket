@@ -1,7 +1,7 @@
-// ==================== API КЛИЕНТ С REAL API ====================
+
 class ChemistryMarketAPI {
     constructor() {
-        this.baseURL = 'http://83.222.18.158:3001/api/v1';
+        this.baseURL = 'https://83.222.18.158:3001/api/v1/product/detail/302016';
         this.authToken = 'Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk='; // Ваш токен из примера
         this.cache = new Map();
         this.cacheDuration = 300000; // 5 минут
@@ -1212,3 +1212,4 @@ document.addEventListener('DOMContentLoaded', function() {
 // ==================== ГЛОБАЛЬНЫЕ ФУНКЦИИ ====================
 window.applyFilters = () => window.productManager?.applyFilters();
 window.resetFilters = () => window.productManager?.resetFilters();
+
