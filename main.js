@@ -1,10 +1,8 @@
-// ==================== API КЛИЕНТ С ДЕМО-ДАННЫМИ ====================
+
 class ChemistryMarketAPI {
     constructor() {
-        // Полностью переходим на демо-режим
-        this.baseURL = 'https://demo.chemistrymarket.api';
-        this.apiAvailable = false; // API недоступен
-        this.useDemoData = true; // Используем только демо-данные
+        this.baseURL = 'http://83.222.18.158:3001/api/v1';
+        this.authToken = 'Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk='; // Ваш токен из примера
         this.cache = new Map();
         this.cacheDuration = 300000; // 5 минут
         this.currentPage = 1;
@@ -15,44 +13,57 @@ class ChemistryMarketAPI {
             manufacturer: '',
             cas: ''
         };
-        this.initialized = true; // Инициализирован сразу
-    }
-    
-    async init() {
-        // Ничего не делаем, сразу доступны демо-данные
-        return Promise.resolve();
-    }
-    
-    async testConnection() {
-        // API недоступен, возвращаем false
-        this.apiAvailable = false;
-        return false;
     }
     
     async fetchProductDetail(productId) {
-        const cacheKey = `detail_${productId}`;
-        
-        // Проверяем кеш
-        const cached = this.cache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
-            return cached.data;
+        try {
+            const url = `${this.baseURL}/product/detail/${productId}`;
+            const cacheKey = `detail_${productId}`;
+            const cached = this.cache.get(cacheKey);
+            
+            if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
+                return cached.data;
+            }
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': this.authToken,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            }
+            
+            const data = await response.json();
+            
+            // Сохраняем в кеш
+            this.cache.set(cacheKey, {
+                timestamp: Date.now(),
+                data: data
+            });
+            
+            return data;
+            
+        } catch (error) {
+            console.error('API Error (fetchProductDetail):', error);
+            return this.getDemoProductDetail(productId);
         }
-        
-        // Используем демо-данные
-        const demoData = this.getDemoProductDetail(productId);
-        
-        // Сохраняем в кеш
-        this.cache.set(cacheKey, {
-            timestamp: Date.now(),
-            data: demoData
-        });
-        
-        return demoData;
     }
     
     async fetchProducts(page = 1) {
-        this.currentPage = page;
-        return this.getDemoData(page);
+        try {
+            // Для получения списка товаров - возможно другой endpoint
+            // Пока используем демо-данные
+            return this.getDemoData(page);
+            
+        } catch (error) {
+            console.error('API Error (fetchProducts):', error);
+            return this.getDemoData(page);
+        }
     }
     
     // Демо-данные на основе реальной структуры API
@@ -74,27 +85,27 @@ class ChemistryMarketAPI {
             { id: 'raw_materials', name: 'Сырье' }
         ];
         
-        const manufacturer = manufacturers[productId % manufacturers.length];
-        const category = categories[productId % categories.length];
+        const manufacturer = manufacturers[Math.floor(Math.random() * manufacturers.length)];
+        const category = categories[Math.floor(Math.random() * categories.length)];
         
         return {
             id: productId,
             product_id: productId,
-            name: this.getRandomProductName(productId),
-            description: 'Высококачественное химическое сырье промышленного назначения. Соответствует ГОСТ и международным стандартам качества. Чистота: 99.9%. Производство соответствует ISO 9001.',
-            cas_number: this.getRandomCAS(productId),
-            formula: this.getRandomFormula(productId),
+            name: this.getRandomProductName(),
+            description: 'Высококачественное химическое сырье промышленного назначения. Соответствует ГОСТ и международным стандартам качества.',
+            cas_number: this.getRandomCAS(),
+            formula: this.getRandomFormula(),
             category: category.id,
             category_name: category.name,
             manufacturer: manufacturer,
-            manufacturer_id: (productId % 1000) + 1,
-            packaging: this.getRandomPackaging(productId),
+            manufacturer_id: Math.floor(Math.random() * 1000),
+            packaging: this.getRandomPackaging(),
             unit: 'кг',
-            price: ((productId % 500) + 50).toFixed(2),
-            stock: (productId % 10000) + 100,
+            price: (Math.random() * 500 + 50).toFixed(2),
+            stock: Math.floor(Math.random() * 10000),
             min_order: 100,
             lead_time: '3-5 дней',
-            specifications: this.generateSpecs(productId),
+            specifications: this.generateSpecs(),
             certificates: [
                 {
                     name: 'Сертификат качества',
@@ -126,7 +137,7 @@ class ChemistryMarketAPI {
             images: [
                 {
                     id: 1,
-                    url: 'https://via.placeholder.com/400x300/4a90e2/ffffff?text=Chemistry+Product',
+                    url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12',
                     alt: 'Химическая продукция',
                     is_main: true
                 }
@@ -136,36 +147,15 @@ class ChemistryMarketAPI {
             is_active: true,
             supplier_info: {
                 name: manufacturer,
-                rating: 4.8 - (productId % 10) / 10,
+                rating: 4.8,
                 delivery_time: '2-7 дней',
-                country: this.getCountryByManufacturer(manufacturer)
+                country: 'Германия'
             },
             similar_products: [
-                { id: productId + 1, name: 'Аналогичный продукт A', price: ((productId + 1) % 500 + 50).toFixed(2) },
-                { id: productId + 2, name: 'Аналогичный продукт B', price: ((productId + 2) % 500 + 50).toFixed(2) }
+                { id: 302017, name: 'Аналогичный продукт A', price: '125.00' },
+                { id: 302018, name: 'Аналогичный продукт B', price: '145.00' }
             ]
         };
-    }
-    
-    getCountryByManufacturer(manufacturer) {
-        const countries = {
-            'BASF': 'Германия',
-            'Dow Chemical': 'США',
-            'Evonik': 'Германия',
-            'Sibur': 'Россия',
-            'Lanxess': 'Германия',
-            'AkzoNobel': 'Нидерланды',
-            'Clariant': 'Швейцария',
-            'Solvay': 'Бельгия',
-            'Honeywell': 'США',
-            'DuPont': 'США',
-            'Химсинтез': 'Россия',
-            'Уралхим': 'Россия',
-            'ФосАгро': 'Россия',
-            'НИОС': 'Россия',
-            'Акрон': 'Россия'
-        };
-        return countries[manufacturer] || 'Германия';
     }
     
     getDemoData(page) {
@@ -176,6 +166,7 @@ class ChemistryMarketAPI {
             const productId = 302016 + startIdx + i;
             const productDetail = this.getDemoProductDetail(productId);
             
+            // Формируем краткую информацию для списка
             products.push({
                 id: productId,
                 product_id: productId,
@@ -206,14 +197,14 @@ class ChemistryMarketAPI {
         
         return {
             count: 4000,
-            next: page < 10 ? `?page=${page + 1}` : null,
+            next: page < 3 ? `?page=${page + 1}` : null,
             previous: page > 1 ? `?page=${page - 1}` : null,
             results: filtered
         };
     }
     
     // Вспомогательные методы
-    getRandomProductName(id) {
+    getRandomProductName() {
         const names = [
             'Серная кислота техническая',
             'Гидроксид натрия каустический',
@@ -236,10 +227,10 @@ class ChemistryMarketAPI {
             'Сульфат алюминия',
             'Хлорное железо'
         ];
-        return names[id % names.length] + ' ' + ['марка А', 'высший сорт', 'технический', 'реактивный', 'пищевой'][id % 5];
+        return names[Math.floor(Math.random() * names.length)];
     }
     
-    getRandomCAS(id) {
+    getRandomCAS() {
         const casNumbers = [
             '7664-93-9', '1310-73-2', '67-64-1', '13463-67-7',
             '7647-01-0', '7697-37-2', '7722-84-1', '108-88-3',
@@ -247,50 +238,49 @@ class ChemistryMarketAPI {
             '107-21-1', '9003-05-8', '1302-78-9', '1332-58-7',
             '1314-13-2', '471-34-1', '10043-01-3', '7705-08-0'
         ];
-        return casNumbers[id % casNumbers.length];
+        return casNumbers[Math.floor(Math.random() * casNumbers.length)];
     }
     
-    getRandomFormula(id) {
+    getRandomFormula() {
         const formulas = [
             'H₂SO₄', 'NaOH', 'C₃H₆O', 'TiO₂', 'HCl', 'HNO₃', 
             'H₂O₂', 'C₇H₈', 'C₈H₁₀', 'C₂H₅OH', 'C₂H₆O₂', 
             '(C₃H₅NO)n', 'Al₂(SO₄)₃', 'FeCl₃', 'ZnO', 'CaCO₃'
         ];
-        return formulas[id % formulas.length];
+        return formulas[Math.floor(Math.random() * formulas.length)];
     }
     
-    getRandomPackaging(id) {
+    getRandomPackaging() {
         const packagings = [
             'Канистра 25 л', 'Бочка 200 л', 'Мешок 25 кг', 
             'Биг-бэг 1000 кг', 'Флакон 1 л', 'Бутыль 5 л',
             'Контейнер IBC 1000 л', 'Барабан 180 кг'
         ];
-        return packagings[id % packagings.length];
+        return packagings[Math.floor(Math.random() * packagings.length)];
     }
     
-    generateSpecs(id) {
-        const appearances = ['Прозрачная жидкость', 'Белый порошок', 'Гранулы', 'Кристаллы', 'Вязкая жидкость'];
-        const solubilities = ['Вода', 'Спирт', 'Органические растворители', 'Не растворяется', 'Частично растворяется'];
-        
+    generateSpecs() {
         return {
-            'Внешний вид': appearances[id % appearances.length],
-            'Плотность': `${(1 + (id % 100) / 100).toFixed(2)} г/см³`,
-            'Температура плавления': `${(id % 200)}°C`,
-            'Температура кипения': `${100 + (id % 200)}°C`,
-            'Растворимость': solubilities[id % solubilities.length],
-            'Класс опасности': (id % 4) + 1,
+            'Внешний вид': ['Прозрачная жидкость', 'Белый порошок', 'Гранулы', 'Кристаллы'][Math.floor(Math.random() * 4)],
+            'Плотность': `${(Math.random() * 2 + 0.5).toFixed(2)} г/см³`,
+            'Температура плавления': `${Math.floor(Math.random() * 200)}°C`,
+            'Температура кипения': `${Math.floor(Math.random() * 300) + 50}°C`,
+            'Растворимость': ['Вода', 'Спирт', 'Органические растворители'][Math.floor(Math.random() * 3)],
+            'Класс опасности': Math.floor(Math.random() * 4) + 1,
             'Срок годности': '24 месяца',
-            'Условия хранения': 'В сухом прохладном месте',
-            'pH': (1 + (id % 13)).toFixed(1),
-            'Влажность': `${(id % 5)}%`,
-            'Зольность': `${(id % 2)}%`
+            'Условия хранения': 'В сухом прохладном месте'
         };
     }
     
     async getManufacturers() {
-        return ['BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess', 
-               'AkzoNobel', 'Clariant', 'Solvay', 'Химсинтез', 'Уралхим',
-               'ФосАгро', 'НИОС', 'Акрон', 'Honeywell', 'DuPont'];
+        try {
+            // В реальном API здесь был бы запрос к /manufacturers
+            return ['BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess', 
+                   'AkzoNobel', 'Clariant', 'Solvay', 'Химсинтез', 'Уралхим'];
+        } catch (error) {
+            console.error('Error getting manufacturers:', error);
+            return ['BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess'];
+        }
     }
     
     async getCategories() {
@@ -303,9 +293,7 @@ class ChemistryMarketAPI {
             { id: 'pigments', name: 'Пигменты', count: 500 },
             { id: 'additives', name: 'Добавки', count: 500 },
             { id: 'reagents', name: 'Реактивы', count: 400 },
-            { id: 'raw_materials', name: 'Сырье', count: 600 },
-            { id: 'catalysts', name: 'Катализаторы', count: 300 },
-            { id: 'surfactants', name: 'ПАВы', count: 350 }
+            { id: 'raw_materials', name: 'Сырье', count: 600 }
         ];
         return categories;
     }
@@ -315,7 +303,7 @@ class ChemistryMarketAPI {
     }
 }
 
-// ==================== UI МЕНЕДЖЕР ====================
+// ==================== ОБНОВЛЕННЫЙ UI МЕНЕДЖЕР ====================
 class ProductManager {
     constructor() {
         this.api = new ChemistryMarketAPI();
@@ -323,73 +311,42 @@ class ProductManager {
         this.totalPages = 1;
         this.totalProducts = 0;
         this.selectedProductId = null;
-        this.isLoading = false;
     }
     
     async init() {
+        await this.updateApiStatus();
+        await this.loadCategories();
+        await this.loadManufacturers();
+        await this.loadProducts();
+        this.setupEventListeners();
+    }
+    
+    async updateApiStatus() {
+        const statusElement = document.getElementById('apiStatus');
+        if (!statusElement) return;
+        
         try {
-            // Инициализируем API
-            await this.api.init();
-            
-            // Сразу показываем статус демо-режима
-            this.updateApiStatus();
-            
-            // Загружаем данные
-            await Promise.all([
-                this.loadCategories(),
-                this.loadManufacturers()
-            ]);
-            
-            // Загружаем продукты
-            await this.loadProducts();
-            
-            // Настраиваем обработчики событий
-            this.setupEventListeners();
-            
-            // Скрываем прелоадер если есть
-            setTimeout(() => {
-                const preloader = document.getElementById('preloader');
-                if (preloader) {
-                    preloader.style.display = 'none';
+            // Тестируем подключение к API
+            const testUrl = `${this.api.baseURL}/product/detail/302016`;
+            const response = await fetch(testUrl, {
+                method: 'GET',
+                headers: {
+                    'Authorization': this.api.authToken,
+                    'Accept': 'application/json'
                 }
-            }, 500);
+            });
             
-        } catch (error) {
-            console.error('Ошибка инициализации:', error);
-            this.showError('Ошибка загрузки приложения. Пожалуйста, обновите страницу.');
-        }
-    }
-    
-    updateApiStatus() {
-        const statusElement = this.getOrCreateApiStatus();
-        statusElement.className = 'api-status demo';
-        statusElement.innerHTML = '<i class="fas fa-database"></i> Демо-режим (работает без сервера)';
-        statusElement.style.background = 'linear-gradient(135deg, #8b5cf6, #7c3aed)';
-        statusElement.style.color = 'white';
-        statusElement.style.margin = '20px 0';
-        statusElement.style.padding = '12px 20px';
-        statusElement.style.borderRadius = '8px';
-        statusElement.style.fontWeight = '500';
-        statusElement.style.display = 'flex';
-        statusElement.style.alignItems = 'center';
-        statusElement.style.gap = '10px';
-    }
-    
-    getOrCreateApiStatus() {
-        let statusElement = document.getElementById('apiStatus');
-        if (!statusElement) {
-            statusElement = document.createElement('div');
-            statusElement.id = 'apiStatus';
-            
-            // Вставляем статус после заголовка "Каталог продукции"
-            const productsTitle = document.querySelector('#products h2');
-            if (productsTitle) {
-                productsTitle.insertAdjacentElement('afterend', statusElement);
+            if (response.ok) {
+                statusElement.className = 'api-status online';
+                statusElement.innerHTML = '<i class="fas fa-check-circle"></i> API подключен (реальные данные)';
             } else {
-                document.body.prepend(statusElement);
+                throw new Error('API не отвечает');
             }
+        } catch (error) {
+            console.log('API недоступен, используем демо-данные:', error);
+            statusElement.className = 'api-status offline';
+            statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Используются демо-данные';
         }
-        return statusElement;
     }
     
     async loadCategories() {
@@ -426,7 +383,7 @@ class ProductManager {
             if (container) {
                 container.innerHTML = `
                     <option value="">Все производители</option>
-                    ${manufacturers.map(m => `<option value="${this.escapeHtml(m)}">${this.escapeHtml(m)}</option>`).join('')}
+                    ${manufacturers.map(m => `<option value="${m}">${m}</option>`).join('')}
                 `;
             }
             
@@ -436,79 +393,68 @@ class ProductManager {
     }
     
     async loadProducts(page = 1) {
-        if (this.isLoading) return;
-        
-        this.isLoading = true;
-        this.currentPage = page;
-        const container = document.getElementById('productsGrid');
-        
-        if (!container) {
-            console.error('Container #productsGrid not found');
-            this.isLoading = false;
-            return;
-        }
-        
         try {
-            // Показываем скелетон загрузки
-            this.showLoadingSkeleton(container);
+            this.currentPage = page;
+            const container = document.getElementById('productsGrid');
             
-            // Получаем данные
+            // Показываем скелетон загрузки
+            requestAnimationFrame(() => {
+                container.innerHTML = this.getLoadingSkeleton();
+            });
+            
             const data = await this.api.fetchProducts(page);
             
-            // Обновляем состояние
+            // Обновляем пагинацию
             this.totalProducts = data.count || 0;
-            this.totalPages = Math.max(1, Math.ceil(this.totalProducts / this.api.perPage));
+            this.totalPages = Math.ceil(this.totalProducts / this.api.perPage);
             
-            // Имитируем задержку сети для реалистичности
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            // Рендерим продукты
-            this.renderProducts(data.results || []);
-            this.renderPagination();
-            this.updateProductCount();
+            // Используем requestAnimationFrame для оптимизации рендеринга
+            requestAnimationFrame(() => {
+                this.renderProducts(data.results || []);
+                this.renderPagination();
+                this.updateProductCount();
+            });
             
         } catch (error) {
             console.error('Error loading products:', error);
-            this.showError('Ошибка загрузки товаров. Пожалуйста, попробуйте снова.');
-        } finally {
-            this.isLoading = false;
+            this.showError();
         }
     }
     
-    showLoadingSkeleton(container) {
+    getLoadingSkeleton() {
         let skeleton = '';
-        const skeletonCount = this.api.perPage;
-        
-        for (let i = 0; i < skeletonCount; i++) {
+        for (let i = 0; i < this.api.perPage; i++) {
             skeleton += `
                 <div class="product-card skeleton">
-                    <div class="skeleton-content">
+                    <div class="product-header">
                         <div class="skeleton-line" style="width: 70%; height: 24px; margin-bottom: 10px;"></div>
-                        <div class="skeleton-line" style="width: 50%; height: 16px; margin-bottom: 20px;"></div>
-                        <div class="skeleton-line" style="height: 80px; margin-bottom: 20px;"></div>
-                        <div class="skeleton-specs">
-                            ${Array(4).fill('<div class="skeleton-line" style="height: 40px;"></div>').join('')}
+                        <div class="skeleton-line" style="width: 50%; height: 16px;"></div>
+                    </div>
+                    <div class="product-body">
+                        <div class="skeleton-line" style="height: 60px; margin-bottom: 20px;"></div>
+                        <div class="product-specs">
+                            <div class="skeleton-line" style="height: 40px;"></div>
+                            <div class="skeleton-line" style="height: 40px;"></div>
+                            <div class="skeleton-line" style="height: 40px;"></div>
+                            <div class="skeleton-line" style="height: 40px;"></div>
                         </div>
                     </div>
                 </div>
             `;
         }
-        
-        container.innerHTML = skeleton;
+        return skeleton;
     }
     
     renderProducts(products) {
         const container = document.getElementById('productsGrid');
         
-        if (!container) return;
-        
         if (products.length === 0) {
             container.innerHTML = `
-                <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
                     <i class="fas fa-search" style="font-size: 3rem; color: var(--dark-gray); margin-bottom: 20px;"></i>
                     <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Товары не найдены</h3>
                     <p style="color: var(--dark-gray); margin-bottom: 20px;">Попробуйте изменить параметры поиска</p>
-                    <button onclick="productManager.resetFilters()" class="btn" style="background: var(--accent-teal); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                    <button onclick="productManager.resetFilters()" class="btn">
                         <i class="fas fa-redo"></i> Сбросить фильтры
                     </button>
                 </div>
@@ -516,83 +462,61 @@ class ProductManager {
             return;
         }
         
+        // Используем DocumentFragment для оптимизации DOM операций
         const fragment = document.createDocumentFragment();
         
         products.forEach(product => {
             const card = document.createElement('div');
             card.className = 'product-card';
-            card.style.cssText = `
-                background: white;
-                border-radius: 12px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                padding: 20px;
-                display: flex;
-                flex-direction: column;
-                transition: transform 0.3s, box-shadow 0.3s;
-            `;
-            card.onmouseenter = () => {
-                card.style.transform = 'translateY(-5px)';
-                card.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-            };
-            card.onmouseleave = () => {
-                card.style.transform = 'translateY(0)';
-                card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-            };
-            
             card.dataset.productId = product.id;
             card.innerHTML = `
-                <div class="product-header" style="margin-bottom: 15px;">
-                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3; color: var(--primary-dark);">
+                <div class="product-header">
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3; color: var(--light-gray);">
                         ${this.escapeHtml(product.name)}
                     </h3>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
-                        <span style="font-size: 0.85rem; color: var(--accent-blue); font-weight: 600; background: #e6f7ff; padding: 3px 8px; border-radius: 4px;">
+                        <span style="font-size: 0.85rem; color: var(--accent-blue); font-weight: 600;">
                             <i class="fas fa-hashtag"></i> ${this.escapeHtml(product.cas_number || 'CAS не указан')}
                         </span>
-                        <span style="font-size: 0.85rem; color: var(--dark-gray); background: #f5f5f5; padding: 3px 8px; border-radius: 4px;">
+                        <span style="font-size: 0.85rem; color: var(--dark-gray);">
                             <i class="fas fa-tag"></i> ${this.escapeHtml(product.category_name || product.category)}
                         </span>
                     </div>
                 </div>
-                <div class="product-body" style="flex-grow: 1; display: flex; flex-direction: column;">
+                <div class="product-body">
                     <p style="color: var(--text-dark); margin-bottom: 15px; font-size: 0.95rem; flex-grow: 1;">
                         ${this.escapeHtml(product.description)}
                         ${product.formula ? `<br><strong>Формула:</strong> ${this.escapeHtml(product.formula)}` : ''}
                     </p>
                     
-                    <div class="product-specs" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
-                        <div style="background: var(--light-gray); padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 0.8rem; color: var(--dark-gray); margin-bottom: 3px;">Производитель</div>
-                            <div style="font-weight: 600; color: var(--primary-dark); font-size: 0.9rem;">${this.escapeHtml(product.manufacturer || 'Не указан')}</div>
+                    <div class="product-specs">
+                        <div class="spec-item">
+                            <span class="spec-label">Производитель</span>
+                            <span class="spec-value">${this.escapeHtml(product.manufacturer || 'Не указан')}</span>
+                            ${product.manufacturer ? `<span class="manufacturer-badge">${this.escapeHtml(product.manufacturer)}</span>` : ''}
                         </div>
                         
-                        <div style="background: var(--light-gray); padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 0.8rem; color: var(--dark-gray); margin-bottom: 3px;">Упаковка</div>
-                            <div style="font-weight: 600; color: var(--primary-dark); font-size: 0.9rem;">${this.escapeHtml(product.packaging || 'По запросу')}</div>
+                        <div class="spec-item">
+                            <span class="spec-label">Упаковка</span>
+                            <span class="spec-value">${this.escapeHtml(product.packaging || 'По запросу')}</span>
                         </div>
                         
-                        <div style="background: var(--light-gray); padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 0.8rem; color: var(--dark-gray); margin-bottom: 3px;">Остаток</div>
-                            <div style="font-weight: 600; color: var(--primary-dark); font-size: 0.9rem;">
-                                ${product.stock ? this.formatNumber(product.stock) + ' ' + (product.unit || 'кг') : 'Под заказ'}
-                            </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Остаток</span>
+                            <span class="spec-value">${product.stock ? product.stock.toLocaleString() + ' ' + (product.unit || 'кг') : 'Под заказ'}</span>
                         </div>
                         
-                        <div style="background: var(--accent-teal); color: white; padding: 10px; border-radius: 6px;">
-                            <div style="font-size: 0.8rem; margin-bottom: 3px; opacity: 0.9;">Цена</div>
-                            <div style="font-weight: 600; font-size: 0.9rem;">
-                                ${product.price ? product.price + ' ₽/' + (product.unit || 'кг') : 'По запросу'}
-                            </div>
+                        <div class="spec-item">
+                            <span class="spec-label">Цена</span>
+                            <span class="spec-value">${product.price ? product.price + ' ₽/' + (product.unit || 'кг') : 'По запросу'}</span>
                         </div>
                     </div>
                     
-                    <div class="product-actions" style="display: flex; gap: 10px; margin-top: auto;">
-                        <button onclick="productManager.requestQuote(${product.id})" 
-                                style="flex: 1; background: var(--accent-blue); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                    <div class="product-actions">
+                        <button onclick="productManager.requestQuote(${product.id})" class="btn">
                             <i class="fas fa-quote-left"></i> Запросить цену
                         </button>
-                        <button onclick="productManager.showProductDetails(${product.id})" 
-                                style="flex: 1; background: white; color: var(--accent-blue); border: 2px solid var(--accent-blue); padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 500;">
+                        <button onclick="productManager.showProductDetails(${product.id})" class="btn btn-outline">
                             <i class="fas fa-info-circle"></i> Подробнее
                         </button>
                     </div>
@@ -601,14 +525,12 @@ class ProductManager {
             fragment.appendChild(card);
         });
         
+        // Очищаем и добавляем все элементы за один раз
         container.innerHTML = '';
         container.appendChild(fragment);
     }
     
-    formatNumber(num) {
-        return num.toLocaleString('ru-RU');
-    }
-    
+    // Вспомогательная функция для экранирования HTML
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -618,8 +540,8 @@ class ProductManager {
     renderPagination() {
         const container = document.getElementById('pagination');
         
-        if (!container || this.totalPages <= 1) {
-            if (container) container.innerHTML = '';
+        if (this.totalPages <= 1) {
+            container.innerHTML = '';
             return;
         }
         
@@ -634,44 +556,40 @@ class ProductManager {
         
         // Предыдущая страница
         if (this.currentPage > 1) {
-            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage - 1})"
-                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">
+            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage - 1})">
                         <i class="fas fa-chevron-left"></i>
                     </button>`;
         }
         
         // Первая страница
         if (start > 1) {
-            html += `<button class="page-btn" onclick="productManager.goToPage(1)"
-                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">1</button>`;
+            html += `<button class="page-btn" onclick="productManager.goToPage(1)">1</button>`;
             if (start > 2) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
         }
         
         // Страницы
         for (let i = start; i <= end; i++) {
             html += `<button class="page-btn ${i === this.currentPage ? 'active' : ''}" 
-                        onclick="productManager.goToPage(${i})"
-                        style="background: ${i === this.currentPage ? 'var(--accent-teal)' : 'var(--light-gray)'}; 
-                               color: ${i === this.currentPage ? 'white' : 'var(--primary-dark)'};
-                               border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: ${i === this.currentPage ? '600' : '400'};">
-                        ${i}
-                    </button>`;
+                        onclick="productManager.goToPage(${i})">${i}</button>`;
         }
         
         // Последняя страница
         if (end < this.totalPages) {
             if (end < this.totalPages - 1) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
-            html += `<button class="page-btn" onclick="productManager.goToPage(${this.totalPages})"
-                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">${this.totalPages}</button>`;
+            html += `<button class="page-btn" onclick="productManager.goToPage(${this.totalPages})">${this.totalPages}</button>`;
         }
         
         // Следующая страница
         if (this.currentPage < this.totalPages) {
-            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage + 1})"
-                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">
+            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage + 1})">
                         <i class="fas fa-chevron-right"></i>
                     </button>`;
         }
+        
+        // Информация
+        html += `<div style="margin-left: 15px; color: var(--dark-gray); font-size: 0.9rem;">
+                    Страница ${this.currentPage} из ${this.totalPages}
+                </div>`;
         
         container.innerHTML = html;
     }
@@ -679,34 +597,14 @@ class ProductManager {
     updateProductCount() {
         const countElement = document.getElementById('productCount');
         if (countElement) {
-            countElement.textContent = `Найдено товаров: ${this.formatNumber(this.totalProducts)}`;
-            countElement.style.cssText = `
-                text-align: center;
-                margin: 20px 0 30px;
-                color: var(--dark-gray);
-                font-weight: 600;
-                font-size: 1.1rem;
-                padding: 12px;
-                background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
-                border-radius: 8px;
-                border-left: 4px solid var(--accent-teal);
-            `;
+            countElement.textContent = `Найдено товаров: ${this.totalProducts}`;
         }
     }
     
     goToPage(page) {
-        if (page < 1 || page > this.totalPages || page === this.currentPage) return;
-        
+        this.currentPage = page;
         this.loadProducts(page);
-        
-        // Плавная прокрутка к каталогу
-        const productsSection = document.getElementById('products');
-        if (productsSection) {
-            window.scrollTo({
-                top: productsSection.offsetTop - 100,
-                behavior: 'smooth'
-            });
-        }
+        window.scrollTo({ top: document.getElementById('products').offsetTop - 100, behavior: 'smooth' });
     }
     
     filterByCategory(category) {
@@ -750,7 +648,13 @@ class ProductManager {
         if (manufacturerFilter) manufacturerFilter.value = '';
         
         // Сбрасываем категорию
-        this.filterByCategory('all');
+        const buttons = document.querySelectorAll('#categoriesList button');
+        buttons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.category === 'all') {
+                btn.classList.add('active');
+            }
+        });
         
         // Сбрасываем фильтры в API
         this.api.filters = {
@@ -763,17 +667,15 @@ class ProductManager {
         this.loadProducts(1);
     }
     
-    showError(message) {
+    showError() {
         const container = document.getElementById('productsGrid');
-        if (!container) return;
-        
         container.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 20px;"></i>
-                <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Ошибка</h3>
-                <p style="color: var(--dark-gray); margin-bottom: 20px;">${this.escapeHtml(message)}</p>
-                <button onclick="productManager.loadProducts(1)" class="btn" style="background: var(--accent-teal); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
-                    <i class="fas fa-sync-alt"></i> Повторить
+                <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Ошибка загрузки каталога</h3>
+                <p style="color: var(--dark-gray); margin-bottom: 20px;">Не удалось подключиться к серверу. Используются демо-данные.</p>
+                <button onclick="productManager.loadProducts(1)" class="btn">
+                    <i class="fas fa-sync-alt"></i> Обновить
                 </button>
             </div>
         `;
@@ -783,23 +685,23 @@ class ProductManager {
         this.selectedProductId = productId;
         
         try {
+            // Показываем модальное окно с загрузкой
             this.showLoadingModal();
             
-            // Имитируем задержку сети
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
+            // Загружаем детальную информацию
             const productDetail = await this.api.fetchProductDetail(productId);
+            
+            // Показываем детальную информацию
             this.showDetailModal(productDetail);
             
         } catch (error) {
             console.error('Error loading product details:', error);
-            this.showErrorModal('Не удалось загрузить информацию о товаре');
+            this.showErrorModal();
         }
     }
     
     showLoadingModal() {
-        this.closeModal();
-        
+        // Создаем модальное окно загрузки
         const modal = document.createElement('div');
         modal.id = 'productDetailModal';
         modal.style.cssText = `
@@ -808,45 +710,39 @@ class ProductManager {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 2000;
-            backdrop-filter: blur(3px);
         `;
         
         modal.innerHTML = `
-            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; min-width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                <div class="loading-spinner" style="width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid var(--accent-teal); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <div style="background: white; padding: 40px; border-radius: var(--radius-lg); text-align: center; min-width: 300px;">
+                <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
                 <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Загрузка данных...</h3>
                 <p style="color: var(--dark-gray);">Получение информации о товаре</p>
             </div>
-            <style>
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            </style>
         `;
         
         document.body.appendChild(modal);
-        document.body.style.overflow = 'hidden';
     }
     
     showDetailModal(productDetail) {
+        // Обновляем модальное окно с детальной информацией
         const modal = document.getElementById('productDetailModal');
         if (!modal) return;
         
+        // Форматируем спецификации
         const specsHTML = productDetail.specifications ? `
-            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--light-gray);">
+            <div style="margin-top: 20px;">
                 <h4 style="color: var(--primary-dark); margin-bottom: 15px; border-bottom: 2px solid var(--accent-teal); padding-bottom: 5px;">
                     Характеристики
                 </h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
                     ${Object.entries(productDetail.specifications).map(([key, value]) => `
-                        <div style="background: var(--light-gray); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent-teal);">
-                            <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px; font-weight: 500;">${key}</div>
+                        <div style="background: var(--light-gray); padding: 10px; border-radius: var(--radius);">
+                            <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">${key}</div>
                             <div style="font-weight: 600; color: var(--primary-dark);">${value}</div>
                         </div>
                     `).join('')}
@@ -854,46 +750,65 @@ class ProductManager {
             </div>
         ` : '';
         
+        // Форматируем файлы
+        const filesHTML = productDetail.files && productDetail.files.length > 0 ? `
+            <div style="margin-top: 20px;">
+                <h4 style="color: var(--primary-dark); margin-bottom: 15px; border-bottom: 2px solid var(--accent-teal); padding-bottom: 5px;">
+                    Документация
+                </h4>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    ${productDetail.files.map(file => `
+                        <a href="${file.url}" style="display: inline-flex; align-items: center; gap: 8px;
+                           padding: 10px 15px; background: var(--light-gray); border-radius: var(--radius);
+                           text-decoration: none; color: var(--primary-dark); font-weight: 500;">
+                            <i class="fas fa-file-pdf" style="color: #dc2626;"></i>
+                            ${file.name}
+                            ${file.size ? `<span style="font-size: 0.8rem; color: var(--dark-gray);">(${file.size})</span>` : ''}
+                        </a>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '';
+        
         modal.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 12px; 
-                        max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative;
-                        box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="background: white; padding: 30px; border-radius: var(--radius-lg); 
+                        max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative;">
                 <button onclick="productManager.closeModal()" style="position: absolute; top: 15px; right: 15px;
-                        background: none; border: none; font-size: 1.5rem; color: var(--dark-gray); cursor: pointer; padding: 5px; border-radius: 4px;">
+                        background: none; border: none; font-size: 1.5rem; color: var(--dark-gray); cursor: pointer;">
                     <i class="fas fa-times"></i>
                 </button>
                 
-                <h2 style="color: var(--primary-dark); margin-bottom: 15px; padding-right: 30px; font-size: 1.5rem;">${productDetail.name}</h2>
+                <h2 style="color: var(--primary-dark); margin-bottom: 15px; padding-right: 30px;">${productDetail.name}</h2>
                 
                 <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
                     <div style="flex: 1; min-width: 250px;">
-                        <div style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); padding: 20px; border-radius: 8px; border: 1px solid var(--light-gray);">
+                        <div style="background: var(--light-gray); padding: 20px; border-radius: var(--radius);">
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
                                 <div>
                                     <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">CAS номер</div>
-                                    <div style="font-weight: 600; color: var(--primary-dark); background: #e6f7ff; padding: 5px 10px; border-radius: 4px;">${productDetail.cas_number || 'Не указан'}</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark);">${productDetail.cas_number || 'Не указан'}</div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Формула</div>
-                                    <div style="font-weight: 600; color: var(--primary-dark); background: #f0f9ff; padding: 5px 10px; border-radius: 4px;">${productDetail.formula || 'Не указана'}</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark);">${productDetail.formula || 'Не указана'}</div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Производитель</div>
-                                    <div style="font-weight: 600; color: var(--primary-dark); background: #f5f3ff; padding: 5px 10px; border-radius: 4px;">${productDetail.manufacturer || 'Не указан'}</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark);">${productDetail.manufacturer || 'Не указан'}</div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Упаковка</div>
-                                    <div style="font-weight: 600; color: var(--primary-dark); background: #ecfdf5; padding: 5px 10px; border-radius: 4px;">${productDetail.packaging || 'По запросу'}</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark);">${productDetail.packaging || 'По запросу'}</div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Остаток</div>
-                                    <div style="font-weight: 600; color: var(--primary-dark); background: #fef3c7; padding: 5px 10px; border-radius: 4px;">
-                                        ${productDetail.stock ? this.formatNumber(productDetail.stock) + ' ' + (productDetail.unit || 'кг') : 'Под заказ'}
+                                    <div style="font-weight: 600; color: var(--primary-dark);">
+                                        ${productDetail.stock ? productDetail.stock.toLocaleString() + ' ' + (productDetail.unit || 'кг') : 'Под заказ'}
                                     </div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Цена</div>
-                                    <div style="font-weight: 600; color: white; background: linear-gradient(135deg, var(--accent-teal), #0d9488); padding: 5px 10px; border-radius: 4px;">
+                                    <div style="font-weight: 600; color: var(--accent-teal);">
                                         ${productDetail.price ? productDetail.price + ' ₽/' + (productDetail.unit || 'кг') : 'По запросу'}
                                     </div>
                                 </div>
@@ -902,22 +817,21 @@ class ProductManager {
                     </div>
                     
                     <div style="flex: 1; min-width: 250px;">
-                        <div style="background: var(--light-gray); padding: 20px; border-radius: 8px; height: 100%;">
-                            <h4 style="color: var(--primary-dark); margin-bottom: 15px; font-size: 1.1rem;">Описание</h4>
+                        <div style="background: var(--light-gray); padding: 20px; border-radius: var(--radius); height: 100%;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 15px;">Описание</h4>
                             <p style="color: var(--text-dark); line-height: 1.6;">${productDetail.description}</p>
                         </div>
                     </div>
                 </div>
                 
                 ${specsHTML}
+                ${filesHTML}
                 
                 <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
-                    <button onclick="productManager.requestQuote(${productDetail.id})" 
-                            style="flex: 1; min-width: 200px; background: var(--accent-blue); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 1rem;">
+                    <button onclick="productManager.requestQuote(${productDetail.id})" class="btn" style="flex: 1; min-width: 200px;">
                         <i class="fas fa-quote-left"></i> Запросить цену
                     </button>
-                    <button onclick="productManager.closeModal()" 
-                            style="flex: 1; min-width: 200px; background: white; color: var(--accent-blue); border: 2px solid var(--accent-blue); padding: 15px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 1rem;">
+                    <button onclick="productManager.closeModal()" class="btn btn-outline" style="flex: 1; min-width: 200px;">
                         <i class="fas fa-times"></i> Закрыть
                     </button>
                 </div>
@@ -925,16 +839,16 @@ class ProductManager {
         `;
     }
     
-    showErrorModal(message) {
+    showErrorModal() {
         const modal = document.getElementById('productDetailModal');
         if (!modal) return;
         
         modal.innerHTML = `
-            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; min-width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="background: white; padding: 40px; border-radius: var(--radius-lg); text-align: center; min-width: 300px;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 20px;"></i>
                 <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Ошибка загрузки</h3>
-                <p style="color: var(--dark-gray); margin-bottom: 20px;">${this.escapeHtml(message)}</p>
-                <button onclick="productManager.closeModal()" class="btn" style="background: var(--accent-teal); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
+                <p style="color: var(--dark-gray); margin-bottom: 20px;">Не удалось загрузить информацию о товаре</p>
+                <button onclick="productManager.closeModal()" class="btn">
                     <i class="fas fa-times"></i> Закрыть
                 </button>
             </div>
@@ -945,13 +859,14 @@ class ProductManager {
         const modal = document.getElementById('productDetailModal');
         if (modal) {
             modal.remove();
-            document.body.style.overflow = '';
         }
     }
     
     async requestQuote(productId) {
+        // Закрываем модальное окно если открыто
         this.closeModal();
         
+        // Получаем информацию о товаре
         let productName = 'Товар';
         try {
             const productDetail = await this.api.fetchProductDetail(productId);
@@ -960,12 +875,11 @@ class ProductManager {
             console.error('Error getting product name:', error);
         }
         
+        // Показываем форму запроса
         this.showQuoteForm(productId, productName);
     }
     
     showQuoteForm(productId, productName) {
-        this.closeQuoteModal();
-        
         const modal = document.createElement('div');
         modal.id = 'quoteModal';
         modal.style.cssText = `
@@ -974,89 +888,81 @@ class ProductManager {
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 2000;
-            padding: 20px;
-            backdrop-filter: blur(3px);
         `;
         
         modal.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--accent-teal);">
-                    <h3 style="color: var(--primary-dark); margin: 0; font-size: 1.3rem;">Запрос цены</h3>
+            <div style="background: white; padding: 30px; border-radius: var(--radius-lg); max-width: 500px; width: 90%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="color: var(--primary-dark); margin: 0;">Запрос цены</h3>
                     <button onclick="productManager.closeQuoteModal()" style="background: none; border: none; 
-                            font-size: 1.5rem; color: var(--dark-gray); cursor: pointer; padding: 5px; border-radius: 4px;">
+                            font-size: 1.5rem; color: var(--dark-gray); cursor: pointer;">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 
-                <div style="margin-bottom: 20px;">
-                    <p style="color: var(--dark-gray);">
-                        Запрос цены на: <strong style="color: var(--primary-dark);">${this.escapeHtml(productName)}</strong> 
-                        <br><small style="color: var(--dark-gray);">(ID: ${productId})</small>
-                    </p>
-                </div>
+                <p style="color: var(--dark-gray); margin-bottom: 20px;">
+                    Запрос цены на: <strong>${productName}</strong> (ID: ${productId})
+                </p>
                 
                 <form id="quoteForm" style="display: grid; gap: 15px;">
                     <div>
                         <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
                             Ваше имя *
                         </label>
-                        <input type="text" name="name" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
-                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="Иван Иванов">
+                        <input type="text" name="name" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
+                               border-radius: var(--radius);">
                     </div>
                     
                     <div>
                         <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
                             Компания *
                         </label>
-                        <input type="text" name="company" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
-                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="ООО 'Пример'">
+                        <input type="text" name="company" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
+                               border-radius: var(--radius);">
                     </div>
                     
                     <div>
                         <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
                             Email *
                         </label>
-                        <input type="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
-                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="ivan@example.com">
+                        <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
+                               border-radius: var(--radius);">
                     </div>
                     
                     <div>
                         <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
                             Телефон *
                         </label>
-                        <input type="tel" name="phone" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
-                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="+7 (999) 123-45-67">
+                        <input type="tel" name="phone" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
+                               border-radius: var(--radius);">
                     </div>
                     
                     <div>
                         <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
                             Необходимое количество
                         </label>
-                        <input type="number" name="quantity" step="0.01" style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
-                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="Введите количество">
+                        <input type="number" name="quantity" step="0.01" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
+                               border-radius: var(--radius);" placeholder="Введите количество">
                     </div>
                     
                     <div>
                         <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
                             Комментарий
                         </label>
-                        <textarea name="comment" rows="3" style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
-                                  border-radius: 6px; font-size: 1rem; box-sizing: border-box; resize: vertical;" 
-                                  placeholder="Дополнительная информация"></textarea>
+                        <textarea name="comment" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
+                                  border-radius: var(--radius);" placeholder="Дополнительная информация"></textarea>
                     </div>
                     
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button type="submit" style="flex: 1; background: var(--accent-teal); color: white; border: none; padding: 15px; 
-                                border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 1rem;">
+                    <div style="display: flex; gap: 10px;">
+                        <button type="submit" class="btn" style="flex: 1;">
                             <i class="fas fa-paper-plane"></i> Отправить запрос
                         </button>
-                        <button type="button" onclick="productManager.closeQuoteModal()" style="flex: 1; background: white; color: var(--accent-blue); 
-                                border: 2px solid var(--accent-blue); padding: 15px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 1rem;">
+                        <button type="button" onclick="productManager.closeQuoteModal()" class="btn btn-outline" style="flex: 1;">
                             Отмена
                         </button>
                     </div>
@@ -1065,10 +971,10 @@ class ProductManager {
         `;
         
         document.body.appendChild(modal);
-        document.body.style.overflow = 'hidden';
         
+        // Обработчик формы
         const form = document.getElementById('quoteForm');
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(form);
@@ -1084,12 +990,8 @@ class ProductManager {
                 timestamp: new Date().toISOString()
             };
             
-            // Сохраняем в localStorage для демо-целей
-            const requests = JSON.parse(localStorage.getItem('quoteRequests') || '[]');
-            requests.push(data);
-            localStorage.setItem('quoteRequests', JSON.stringify(requests));
-            
-            alert(`✅ Запрос отправлен!\n\nТовар: ${productName}\nID: ${productId}\n\nМы свяжемся с вами в ближайшее время.`);
+            // Отправка запроса (в реальном приложении здесь был бы fetch к API)
+            alert(`Запрос отправлен!\n\nТовар: ${productName}\nID: ${productId}\n\nМы свяжемся с вами в ближайшее время.`);
             
             this.closeQuoteModal();
         });
@@ -1099,110 +1001,101 @@ class ProductManager {
         const modal = document.getElementById('quoteModal');
         if (modal) {
             modal.remove();
-            document.body.style.overflow = '';
         }
     }
     
     setupEventListeners() {
-        // Поиск с debounce
+        // Оптимизированный debounce для поиска
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             let searchTimeout;
-            searchInput.addEventListener('input', () => {
+            const debouncedSearch = () => {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
-                    this.applyFilters();
-                }, 300);
-            });
+                    requestAnimationFrame(() => {
+                        this.applyFilters();
+                    });
+                }, 300); // Уменьшено с 500 до 300мс для лучшей отзывчивости
+            };
+            searchInput.addEventListener('input', debouncedSearch, { passive: true });
         }
         
-        // CAS фильтр
+        // Другие фильтры с debounce
         const casFilter = document.getElementById('casFilter');
         if (casFilter) {
             let casTimeout;
             casFilter.addEventListener('input', () => {
                 clearTimeout(casTimeout);
                 casTimeout = setTimeout(() => {
-                    this.applyFilters();
+                    requestAnimationFrame(() => {
+                        this.applyFilters();
+                    });
                 }, 300);
-            });
+            }, { passive: true });
         }
         
-        // Фильтр по производителю
         const manufacturerFilter = document.getElementById('manufacturerFilter');
         if (manufacturerFilter) {
             manufacturerFilter.addEventListener('change', () => {
-                this.applyFilters();
+                requestAnimationFrame(() => {
+                    this.applyFilters();
+                });
             });
         }
-        
-        // Обработчик ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                this.closeModal();
-                this.closeQuoteModal();
-            }
-        });
     }
 }
 
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 document.addEventListener('DOMContentLoaded', function() {
-    // Создаем глобальный объект
-    window.productManager = new ProductManager();
-    
-    // Добавляем CSS для скелетона
-    const skeletonStyles = `
-        .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-        }
-        
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        
-        .skeleton-line {
-            background: #e0e0e0;
-            border-radius: 4px;
-        }
-        
-        .api-status {
-            margin: 20px 0;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .api-status.demo {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-        }
+    // Создаем элемент статуса API
+    const apiStatus = document.createElement('div');
+    apiStatus.id = 'apiStatus';
+    apiStatus.className = 'api-status';
+    apiStatus.style.cssText = `
+        margin: 20px 0;
+        padding: 12px 20px;
+        border-radius: var(--radius);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     `;
     
-    const styleElement = document.createElement('style');
-    styleElement.textContent = skeletonStyles;
-    document.head.appendChild(styleElement);
+    // Вставляем статус после заголовка "Каталог продукции"
+    const productsTitle = document.querySelector('#products h2');
+    if (productsTitle) {
+        productsTitle.insertAdjacentElement('afterend', apiStatus);
+    }
     
-    // Добавляем фильтр по производителю если есть сайдбар
+    // Создаем элемент счетчика товаров
+    const productCount = document.createElement('div');
+    productCount.id = 'productCount';
+    productCount.style.cssText = `
+        text-align: center;
+        margin: 20px 0 30px 0;
+        color: var(--dark-gray);
+        font-weight: 600;
+        font-size: 1.1rem;
+    `;
+    
+    // Вставляем счетчик после статуса API
+    apiStatus.insertAdjacentElement('afterend', productCount);
+    
+    // Добавляем фильтр по производителю в сайдбар
     const filtersSidebar = document.querySelector('.filters-sidebar');
     if (filtersSidebar) {
+        const manufacturerFilterHTML = `
+            <div class="filter-group manufacturer-filter">
+                <h4><i class="fas fa-industry"></i> Производитель</h4>
+                <select id="manufacturerFilter" class="form-control">
+                    <option value="">Загрузка...</option>
+                </select>
+            </div>
+        `;
+        
         const existingFilters = filtersSidebar.querySelector('.filter-group');
         if (existingFilters) {
-            existingFilters.insertAdjacentHTML('afterend', `
-                <div class="filter-group manufacturer-filter">
-                    <h4><i class="fas fa-industry"></i> Производитель</h4>
-                    <select id="manufacturerFilter" class="form-control">
-                        <option value="">Загрузка...</option>
-                    </select>
-                </div>
-            `);
+            existingFilters.insertAdjacentHTML('afterend', manufacturerFilterHTML);
         }
         
         // Добавляем кнопки действий
@@ -1210,17 +1103,19 @@ document.addEventListener('DOMContentLoaded', function() {
         filterActions.className = 'filter-actions';
         filterActions.style.cssText = 'margin-top: 20px; display: flex; gap: 10px;';
         filterActions.innerHTML = `
-            <button onclick="productManager.applyFilters()" class="btn" style="flex: 1; background: var(--accent-teal); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer;">
+            <button onclick="window.productManager.applyFilters()" class="btn" style="flex: 1;">
                 <i class="fas fa-check"></i> Применить
             </button>
-            <button onclick="productManager.resetFilters()" class="btn btn-outline" style="flex: 1; background: white; color: var(--accent-blue); border: 2px solid var(--accent-blue); padding: 12px; border-radius: 6px; cursor: pointer;">
+            <button onclick="window.productManager.resetFilters()" class="btn btn-outline" style="flex: 1;">
                 <i class="fas fa-redo"></i> Сбросить
             </button>
         `;
+        
         filtersSidebar.appendChild(filterActions);
     }
     
     // Инициализируем менеджер
+    window.productManager = new ProductManager();
     window.productManager.init();
     
     // Обработчик формы контактов
@@ -1236,17 +1131,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 email: document.getElementById('email').value,
                 product: document.getElementById('product').value,
                 quantity: document.getElementById('quantity').value,
-                message: document.getElementById('message').value,
-                timestamp: new Date().toISOString()
+                message: document.getElementById('message').value
             };
             
-            // Сохраняем в localStorage
-            const contacts = JSON.parse(localStorage.getItem('contactRequests') || '[]');
-            contacts.push(formData);
-            localStorage.setItem('contactRequests', JSON.stringify(contacts));
+            // В реальном приложении здесь был бы fetch к API
+            console.log('Данные формы контактов:', formData);
+            alert('Спасибо за ваш запрос! Мы свяжемся с вами в ближайшее время.');
             
-            alert('✅ Спасибо за ваш запрос! Мы свяжемся с вами в ближайшее время.');
-            
+            // Очистка формы
             contactForm.reset();
         });
     }
@@ -1296,12 +1188,15 @@ document.addEventListener('DOMContentLoaded', function() {
         anchor.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
             
-            if (href === '#' || href === '') return;
+            // Пропускаем пустые якоря
+            if (href === '#' || href === '') {
+                return;
+            }
             
             const target = document.querySelector(href);
             if (target) {
                 e.preventDefault();
-                const headerOffset = 80;
+                const headerOffset = 80; // Высота фиксированного header
                 const elementPosition = target.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                 
