@@ -13,9 +13,10 @@
             padding: 40px 30px;
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            transition: var(--transition);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             text-align: center;
             border-top: 4px solid var(--accent-teal);
+            will-change: transform;
         }
 
         .value-card:hover {

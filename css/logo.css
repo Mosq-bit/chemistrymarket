@@ -29,6 +29,7 @@
             transform: translate(-50%, -50%);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
             animation: pulse 2s infinite alternate;
+            will-change: transform;
         }
 
         .bond {
@@ -52,6 +53,7 @@
             background: var(--accent-teal);
             border-radius: 50%;
             animation: orbit 6s linear infinite;
+            will-change: transform;
         }
 
         .e-1 { 
@@ -99,8 +101,7 @@
         .tagline {
             font-family: 'Open Sans', sans-serif;
             font-size: 1.2rem;
-            color: var(--medium-gray);
+            color: var(--white);
             font-weight: 600;
             letter-spacing: 0.5px;
-
         }

@@ -37,7 +37,8 @@
             font-size: 1.3rem;
             max-width: 700px;
             margin: 0 auto 3rem;
-            opacity: 0.9;
+            opacity: 0.95;
+            color: var(--white);
         }
 
         .hero-btns {
@@ -67,7 +68,8 @@
             background: var(--white);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            transition: var(--transition);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            will-change: transform;
         }
 
         .stat-item:hover {
