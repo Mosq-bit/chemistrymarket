@@ -1,4 +1,4 @@
-
+// ==================== API КЛИЕНТ С REAL API ====================
 class ChemistryMarketAPI {
     constructor() {
         this.baseURL = 'http://83.222.18.158:3001/api/v1';
