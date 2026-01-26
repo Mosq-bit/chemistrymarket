@@ -1,9 +1,10 @@
-// ==================== API КЛИЕНТ С REAL API ====================
+// ==================== API КЛИЕНТ С ДЕМО-ДАННЫМИ ====================
 class ChemistryMarketAPI {
     constructor() {
-        // ИСПРАВЛЕНО: Определяем базовый URL динамически
-        this.baseURL = this.determineBaseURL();
-        this.authToken = 'Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk='; // Ваш токен из примера
+        // Полностью переходим на демо-режим
+        this.baseURL = 'https://demo.chemistrymarket.api';
+        this.apiAvailable = false; // API недоступен
+        this.useDemoData = true; // Используем только демо-данные
         this.cache = new Map();
         this.cacheDuration = 300000; // 5 минут
         this.currentPage = 1;
@@ -14,100 +15,18 @@ class ChemistryMarketAPI {
             manufacturer: '',
             cas: ''
         };
-        this.apiAvailable = false;
-        this.initialized = false;
-    }
-    
-    determineBaseURL() {
-        const isProduction = window.location.hostname.includes('github.io');
-        const isLocalhost = window.location.hostname === 'localhost' || 
-                           window.location.hostname === '127.0.0.1';
-        
-        if (isProduction) {
-            // В production пробуем разные варианты
-            const possibleURLs = [
-                'https://83.222.18.158:3001/api/v1',
-                'https://chemistrymarket-api.onrender.com/api/v1', // пример для Render/Heroku
-                'https://corsproxy.io/?https://83.222.18.158:3001/api/v1'
-            ];
-            return possibleURLs[0]; // Используем первый вариант
-        } else if (isLocalhost) {
-            // Для локальной разработки
-            return 'http://localhost:3001/api/v1';
-        } else {
-            // Для других случаев
-            return 'https://83.222.18.158:3001/api/v1';
-        }
+        this.initialized = true; // Инициализирован сразу
     }
     
     async init() {
-        if (this.initialized) return;
-        
-        try {
-            // Тестируем подключение к API
-            await this.testConnection();
-            this.initialized = true;
-        } catch (error) {
-            console.warn('API инициализация не удалась, используем демо-режим:', error.message);
-            this.apiAvailable = false;
-        }
+        // Ничего не делаем, сразу доступны демо-данные
+        return Promise.resolve();
     }
     
     async testConnection() {
-        const testURLs = [
-            `${this.baseURL}/product/detail/302016`,
-            `https://corsproxy.io/?${encodeURIComponent(`http://83.222.18.158:3001/api/v1/product/detail/302016`)}`
-        ];
-        
-        for (const url of testURLs) {
-            try {
-                console.log('Тестируем подключение к:', url);
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': this.authToken,
-                        'Accept': 'application/json'
-                    },
-                    signal: AbortSignal.timeout(3000)
-                });
-                
-                if (response.ok) {
-                    this.apiAvailable = true;
-                    console.log('API доступен через:', url);
-                    return true;
-                }
-            } catch (error) {
-                console.log('Не удалось подключиться к:', url, error.message);
-                continue;
-            }
-        }
-        
+        // API недоступен, возвращаем false
         this.apiAvailable = false;
         return false;
-    }
-    
-    async safeFetch(url, options = {}) {
-        try {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    'Authorization': this.authToken,
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                signal: AbortSignal.timeout(5000)
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            return await response.json();
-        } catch (error) {
-            console.warn('Ошибка fetch:', error.message);
-            return null;
-        }
     }
     
     async fetchProductDetail(productId) {
@@ -119,50 +38,20 @@ class ChemistryMarketAPI {
             return cached.data;
         }
         
-        if (this.apiAvailable) {
-            try {
-                // Пробуем прямое подключение
-                const directUrl = `${this.baseURL}/product/detail/${productId}`;
-                const data = await this.safeFetch(directUrl);
-                
-                if (data) {
-                    this.cache.set(cacheKey, {
-                        timestamp: Date.now(),
-                        data: data
-                    });
-                    return data;
-                }
-                
-                // Если прямое подключение не сработало, пробуем через CORS прокси
-                const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(`http://83.222.18.158:3001/api/v1/product/detail/${productId}`)}`;
-                const proxyData = await this.safeFetch(proxyUrl);
-                
-                if (proxyData) {
-                    this.cache.set(cacheKey, {
-                        timestamp: Date.now(),
-                        data: proxyData
-                    });
-                    return proxyData;
-                }
-            } catch (error) {
-                console.warn('Ошибка получения данных с API:', error.message);
-            }
-        }
-        
-        // Если API недоступен, используем демо-данные
+        // Используем демо-данные
         const demoData = this.getDemoProductDetail(productId);
+        
+        // Сохраняем в кеш
         this.cache.set(cacheKey, {
             timestamp: Date.now(),
             data: demoData
         });
+        
         return demoData;
     }
     
     async fetchProducts(page = 1) {
         this.currentPage = page;
-        
-        // В реальном API здесь был бы запрос к /products
-        // Пока используем демо-данные
         return this.getDemoData(page);
     }
     
@@ -185,27 +74,27 @@ class ChemistryMarketAPI {
             { id: 'raw_materials', name: 'Сырье' }
         ];
         
-        const manufacturer = manufacturers[Math.floor(Math.random() * manufacturers.length)];
-        const category = categories[Math.floor(Math.random() * categories.length)];
+        const manufacturer = manufacturers[productId % manufacturers.length];
+        const category = categories[productId % categories.length];
         
         return {
             id: productId,
             product_id: productId,
-            name: this.getRandomProductName(),
-            description: 'Высококачественное химическое сырье промышленного назначения. Соответствует ГОСТ и международным стандартам качества.',
-            cas_number: this.getRandomCAS(),
-            formula: this.getRandomFormula(),
+            name: this.getRandomProductName(productId),
+            description: 'Высококачественное химическое сырье промышленного назначения. Соответствует ГОСТ и международным стандартам качества. Чистота: 99.9%. Производство соответствует ISO 9001.',
+            cas_number: this.getRandomCAS(productId),
+            formula: this.getRandomFormula(productId),
             category: category.id,
             category_name: category.name,
             manufacturer: manufacturer,
-            manufacturer_id: Math.floor(Math.random() * 1000),
-            packaging: this.getRandomPackaging(),
+            manufacturer_id: (productId % 1000) + 1,
+            packaging: this.getRandomPackaging(productId),
             unit: 'кг',
-            price: (Math.random() * 500 + 50).toFixed(2),
-            stock: Math.floor(Math.random() * 10000),
+            price: ((productId % 500) + 50).toFixed(2),
+            stock: (productId % 10000) + 100,
             min_order: 100,
             lead_time: '3-5 дней',
-            specifications: this.generateSpecs(),
+            specifications: this.generateSpecs(productId),
             certificates: [
                 {
                     name: 'Сертификат качества',
@@ -237,7 +126,7 @@ class ChemistryMarketAPI {
             images: [
                 {
                     id: 1,
-                    url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12',
+                    url: 'https://via.placeholder.com/400x300/4a90e2/ffffff?text=Chemistry+Product',
                     alt: 'Химическая продукция',
                     is_main: true
                 }
@@ -247,15 +136,36 @@ class ChemistryMarketAPI {
             is_active: true,
             supplier_info: {
                 name: manufacturer,
-                rating: 4.8,
+                rating: 4.8 - (productId % 10) / 10,
                 delivery_time: '2-7 дней',
-                country: 'Германия'
+                country: this.getCountryByManufacturer(manufacturer)
             },
             similar_products: [
-                { id: 302017, name: 'Аналогичный продукт A', price: '125.00' },
-                { id: 302018, name: 'Аналогичный продукт B', price: '145.00' }
+                { id: productId + 1, name: 'Аналогичный продукт A', price: ((productId + 1) % 500 + 50).toFixed(2) },
+                { id: productId + 2, name: 'Аналогичный продукт B', price: ((productId + 2) % 500 + 50).toFixed(2) }
             ]
         };
+    }
+    
+    getCountryByManufacturer(manufacturer) {
+        const countries = {
+            'BASF': 'Германия',
+            'Dow Chemical': 'США',
+            'Evonik': 'Германия',
+            'Sibur': 'Россия',
+            'Lanxess': 'Германия',
+            'AkzoNobel': 'Нидерланды',
+            'Clariant': 'Швейцария',
+            'Solvay': 'Бельгия',
+            'Honeywell': 'США',
+            'DuPont': 'США',
+            'Химсинтез': 'Россия',
+            'Уралхим': 'Россия',
+            'ФосАгро': 'Россия',
+            'НИОС': 'Россия',
+            'Акрон': 'Россия'
+        };
+        return countries[manufacturer] || 'Германия';
     }
     
     getDemoData(page) {
@@ -266,7 +176,6 @@ class ChemistryMarketAPI {
             const productId = 302016 + startIdx + i;
             const productDetail = this.getDemoProductDetail(productId);
             
-            // Формируем краткую информацию для списка
             products.push({
                 id: productId,
                 product_id: productId,
@@ -297,14 +206,14 @@ class ChemistryMarketAPI {
         
         return {
             count: 4000,
-            next: page < 3 ? `?page=${page + 1}` : null,
+            next: page < 10 ? `?page=${page + 1}` : null,
             previous: page > 1 ? `?page=${page - 1}` : null,
             results: filtered
         };
     }
     
     // Вспомогательные методы
-    getRandomProductName() {
+    getRandomProductName(id) {
         const names = [
             'Серная кислота техническая',
             'Гидроксид натрия каустический',
@@ -327,10 +236,10 @@ class ChemistryMarketAPI {
             'Сульфат алюминия',
             'Хлорное железо'
         ];
-        return names[Math.floor(Math.random() * names.length)];
+        return names[id % names.length] + ' ' + ['марка А', 'высший сорт', 'технический', 'реактивный', 'пищевой'][id % 5];
     }
     
-    getRandomCAS() {
+    getRandomCAS(id) {
         const casNumbers = [
             '7664-93-9', '1310-73-2', '67-64-1', '13463-67-7',
             '7647-01-0', '7697-37-2', '7722-84-1', '108-88-3',
@@ -338,70 +247,53 @@ class ChemistryMarketAPI {
             '107-21-1', '9003-05-8', '1302-78-9', '1332-58-7',
             '1314-13-2', '471-34-1', '10043-01-3', '7705-08-0'
         ];
-        return casNumbers[Math.floor(Math.random() * casNumbers.length)];
+        return casNumbers[id % casNumbers.length];
     }
     
-    getRandomFormula() {
+    getRandomFormula(id) {
         const formulas = [
             'H₂SO₄', 'NaOH', 'C₃H₆O', 'TiO₂', 'HCl', 'HNO₃', 
             'H₂O₂', 'C₇H₈', 'C₈H₁₀', 'C₂H₅OH', 'C₂H₆O₂', 
             '(C₃H₅NO)n', 'Al₂(SO₄)₃', 'FeCl₃', 'ZnO', 'CaCO₃'
         ];
-        return formulas[Math.floor(Math.random() * formulas.length)];
+        return formulas[id % formulas.length];
     }
     
-    getRandomPackaging() {
+    getRandomPackaging(id) {
         const packagings = [
             'Канистра 25 л', 'Бочка 200 л', 'Мешок 25 кг', 
             'Биг-бэг 1000 кг', 'Флакон 1 л', 'Бутыль 5 л',
             'Контейнер IBC 1000 л', 'Барабан 180 кг'
         ];
-        return packagings[Math.floor(Math.random() * packagings.length)];
+        return packagings[id % packagings.length];
     }
     
-    generateSpecs() {
+    generateSpecs(id) {
+        const appearances = ['Прозрачная жидкость', 'Белый порошок', 'Гранулы', 'Кристаллы', 'Вязкая жидкость'];
+        const solubilities = ['Вода', 'Спирт', 'Органические растворители', 'Не растворяется', 'Частично растворяется'];
+        
         return {
-            'Внешний вид': ['Прозрачная жидкость', 'Белый порошок', 'Гранулы', 'Кристаллы'][Math.floor(Math.random() * 4)],
-            'Плотность': `${(Math.random() * 2 + 0.5).toFixed(2)} г/см³`,
-            'Температура плавления': `${Math.floor(Math.random() * 200)}°C`,
-            'Температура кипения': `${Math.floor(Math.random() * 300) + 50}°C`,
-            'Растворимость': ['Вода', 'Спирт', 'Органические растворители'][Math.floor(Math.random() * 3)],
-            'Класс опасности': Math.floor(Math.random() * 4) + 1,
+            'Внешний вид': appearances[id % appearances.length],
+            'Плотность': `${(1 + (id % 100) / 100).toFixed(2)} г/см³`,
+            'Температура плавления': `${(id % 200)}°C`,
+            'Температура кипения': `${100 + (id % 200)}°C`,
+            'Растворимость': solubilities[id % solubilities.length],
+            'Класс опасности': (id % 4) + 1,
             'Срок годности': '24 месяца',
-            'Условия хранения': 'В сухом прохладном месте'
+            'Условия хранения': 'В сухом прохладном месте',
+            'pH': (1 + (id % 13)).toFixed(1),
+            'Влажность': `${(id % 5)}%`,
+            'Зольность': `${(id % 2)}%`
         };
     }
     
     async getManufacturers() {
-        try {
-            if (this.apiAvailable) {
-                const data = await this.safeFetch(`${this.baseURL}/manufacturers`);
-                if (data && Array.isArray(data)) {
-                    return data;
-                }
-            }
-        } catch (error) {
-            console.warn('Не удалось получить производителей:', error.message);
-        }
-        
-        // Fallback данные
         return ['BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess', 
-               'AkzoNobel', 'Clariant', 'Solvay', 'Химсинтез', 'Уралхим'];
+               'AkzoNobel', 'Clariant', 'Solvay', 'Химсинтез', 'Уралхим',
+               'ФосАгро', 'НИОС', 'Акрон', 'Honeywell', 'DuPont'];
     }
     
     async getCategories() {
-        try {
-            if (this.apiAvailable) {
-                const data = await this.safeFetch(`${this.baseURL}/categories`);
-                if (data && Array.isArray(data)) {
-                    return data.map(cat => ({ ...cat, count: Math.floor(Math.random() * 1000) + 100 }));
-                }
-            }
-        } catch (error) {
-            console.warn('Не удалось получить категории:', error.message);
-        }
-        
-        // Fallback данные
         const categories = [
             { id: 'all', name: 'Все категории', count: 4000 },
             { id: 'acids', name: 'Кислоты', count: 800 },
@@ -411,7 +303,9 @@ class ChemistryMarketAPI {
             { id: 'pigments', name: 'Пигменты', count: 500 },
             { id: 'additives', name: 'Добавки', count: 500 },
             { id: 'reagents', name: 'Реактивы', count: 400 },
-            { id: 'raw_materials', name: 'Сырье', count: 600 }
+            { id: 'raw_materials', name: 'Сырье', count: 600 },
+            { id: 'catalysts', name: 'Катализаторы', count: 300 },
+            { id: 'surfactants', name: 'ПАВы', count: 350 }
         ];
         return categories;
     }
@@ -421,7 +315,7 @@ class ChemistryMarketAPI {
     }
 }
 
-// ==================== ОБНОВЛЕННЫЙ UI МЕНЕДЖЕР ====================
+// ==================== UI МЕНЕДЖЕР ====================
 class ProductManager {
     constructor() {
         this.api = new ChemistryMarketAPI();
@@ -434,15 +328,14 @@ class ProductManager {
     
     async init() {
         try {
-            // Показываем статус загрузки
-            this.showLoadingStatus();
-            
             // Инициализируем API
             await this.api.init();
             
+            // Сразу показываем статус демо-режима
+            this.updateApiStatus();
+            
             // Загружаем данные
             await Promise.all([
-                this.updateApiStatus(),
                 this.loadCategories(),
                 this.loadManufacturers()
             ]);
@@ -453,17 +346,33 @@ class ProductManager {
             // Настраиваем обработчики событий
             this.setupEventListeners();
             
+            // Скрываем прелоадер если есть
+            setTimeout(() => {
+                const preloader = document.getElementById('preloader');
+                if (preloader) {
+                    preloader.style.display = 'none';
+                }
+            }, 500);
+            
         } catch (error) {
             console.error('Ошибка инициализации:', error);
             this.showError('Ошибка загрузки приложения. Пожалуйста, обновите страницу.');
         }
     }
     
-    showLoadingStatus() {
+    updateApiStatus() {
         const statusElement = this.getOrCreateApiStatus();
-        statusElement.className = 'api-status loading';
-        statusElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка каталога...';
-        statusElement.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+        statusElement.className = 'api-status demo';
+        statusElement.innerHTML = '<i class="fas fa-database"></i> Демо-режим (работает без сервера)';
+        statusElement.style.background = 'linear-gradient(135deg, #8b5cf6, #7c3aed)';
+        statusElement.style.color = 'white';
+        statusElement.style.margin = '20px 0';
+        statusElement.style.padding = '12px 20px';
+        statusElement.style.borderRadius = '8px';
+        statusElement.style.fontWeight = '500';
+        statusElement.style.display = 'flex';
+        statusElement.style.alignItems = 'center';
+        statusElement.style.gap = '10px';
     }
     
     getOrCreateApiStatus() {
@@ -471,17 +380,6 @@ class ProductManager {
         if (!statusElement) {
             statusElement = document.createElement('div');
             statusElement.id = 'apiStatus';
-            statusElement.style.cssText = `
-                margin: 20px 0;
-                padding: 12px 20px;
-                border-radius: 8px;
-                font-weight: 500;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                color: white;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            `;
             
             // Вставляем статус после заголовка "Каталог продукции"
             const productsTitle = document.querySelector('#products h2');
@@ -492,20 +390,6 @@ class ProductManager {
             }
         }
         return statusElement;
-    }
-    
-    async updateApiStatus() {
-        const statusElement = this.getOrCreateApiStatus();
-        
-        if (this.api.apiAvailable) {
-            statusElement.className = 'api-status online';
-            statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Режим реальных данных';
-            statusElement.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-        } else {
-            statusElement.className = 'api-status offline';
-            statusElement.innerHTML = '<i class="fas fa-database"></i> Демо-режим (данные сгенерированы локально)';
-            statusElement.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-        }
     }
     
     async loadCategories() {
@@ -560,6 +444,7 @@ class ProductManager {
         
         if (!container) {
             console.error('Container #productsGrid not found');
+            this.isLoading = false;
             return;
         }
         
@@ -573,6 +458,9 @@ class ProductManager {
             // Обновляем состояние
             this.totalProducts = data.count || 0;
             this.totalPages = Math.max(1, Math.ceil(this.totalProducts / this.api.perPage));
+            
+            // Имитируем задержку сети для реалистичности
+            await new Promise(resolve => setTimeout(resolve, 300));
             
             // Рендерим продукты
             this.renderProducts(data.results || []);
@@ -616,11 +504,11 @@ class ProductManager {
         
         if (products.length === 0) {
             container.innerHTML = `
-                <div class="no-results">
-                    <i class="fas fa-search"></i>
-                    <h3>Товары не найдены</h3>
-                    <p>Попробуйте изменить параметры поиска</p>
-                    <button onclick="productManager.resetFilters()" class="btn">
+                <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                    <i class="fas fa-search" style="font-size: 3rem; color: var(--dark-gray); margin-bottom: 20px;"></i>
+                    <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Товары не найдены</h3>
+                    <p style="color: var(--dark-gray); margin-bottom: 20px;">Попробуйте изменить параметры поиска</p>
+                    <button onclick="productManager.resetFilters()" class="btn" style="background: var(--accent-teal); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
                         <i class="fas fa-redo"></i> Сбросить фильтры
                     </button>
                 </div>
@@ -633,52 +521,78 @@ class ProductManager {
         products.forEach(product => {
             const card = document.createElement('div');
             card.className = 'product-card';
+            card.style.cssText = `
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                transition: transform 0.3s, box-shadow 0.3s;
+            `;
+            card.onmouseenter = () => {
+                card.style.transform = 'translateY(-5px)';
+                card.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+            };
+            card.onmouseleave = () => {
+                card.style.transform = 'translateY(0)';
+                card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+            };
+            
             card.dataset.productId = product.id;
             card.innerHTML = `
-                <div class="product-header">
-                    <h3>${this.escapeHtml(product.name)}</h3>
-                    <div class="product-meta">
-                        <span class="cas-number">
+                <div class="product-header" style="margin-bottom: 15px;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3; color: var(--primary-dark);">
+                        ${this.escapeHtml(product.name)}
+                    </h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
+                        <span style="font-size: 0.85rem; color: var(--accent-blue); font-weight: 600; background: #e6f7ff; padding: 3px 8px; border-radius: 4px;">
                             <i class="fas fa-hashtag"></i> ${this.escapeHtml(product.cas_number || 'CAS не указан')}
                         </span>
-                        <span class="category">
+                        <span style="font-size: 0.85rem; color: var(--dark-gray); background: #f5f5f5; padding: 3px 8px; border-radius: 4px;">
                             <i class="fas fa-tag"></i> ${this.escapeHtml(product.category_name || product.category)}
                         </span>
                     </div>
                 </div>
-                <div class="product-body">
-                    <p class="description">
+                <div class="product-body" style="flex-grow: 1; display: flex; flex-direction: column;">
+                    <p style="color: var(--text-dark); margin-bottom: 15px; font-size: 0.95rem; flex-grow: 1;">
                         ${this.escapeHtml(product.description)}
                         ${product.formula ? `<br><strong>Формула:</strong> ${this.escapeHtml(product.formula)}` : ''}
                     </p>
                     
-                    <div class="product-specs">
-                        <div class="spec-item">
-                            <span class="spec-label">Производитель</span>
-                            <span class="spec-value manufacturer">${this.escapeHtml(product.manufacturer || 'Не указан')}</span>
+                    <div class="product-specs" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
+                        <div style="background: var(--light-gray); padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 0.8rem; color: var(--dark-gray); margin-bottom: 3px;">Производитель</div>
+                            <div style="font-weight: 600; color: var(--primary-dark); font-size: 0.9rem;">${this.escapeHtml(product.manufacturer || 'Не указан')}</div>
                         </div>
                         
-                        <div class="spec-item">
-                            <span class="spec-label">Упаковка</span>
-                            <span class="spec-value">${this.escapeHtml(product.packaging || 'По запросу')}</span>
+                        <div style="background: var(--light-gray); padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 0.8rem; color: var(--dark-gray); margin-bottom: 3px;">Упаковка</div>
+                            <div style="font-weight: 600; color: var(--primary-dark); font-size: 0.9rem;">${this.escapeHtml(product.packaging || 'По запросу')}</div>
                         </div>
                         
-                        <div class="spec-item">
-                            <span class="spec-label">Остаток</span>
-                            <span class="spec-value stock">${product.stock ? this.formatNumber(product.stock) + ' ' + (product.unit || 'кг') : 'Под заказ'}</span>
+                        <div style="background: var(--light-gray); padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 0.8rem; color: var(--dark-gray); margin-bottom: 3px;">Остаток</div>
+                            <div style="font-weight: 600; color: var(--primary-dark); font-size: 0.9rem;">
+                                ${product.stock ? this.formatNumber(product.stock) + ' ' + (product.unit || 'кг') : 'Под заказ'}
+                            </div>
                         </div>
                         
-                        <div class="spec-item">
-                            <span class="spec-label">Цена</span>
-                            <span class="spec-value price">${product.price ? product.price + ' ₽/' + (product.unit || 'кг') : 'По запросу'}</span>
+                        <div style="background: var(--accent-teal); color: white; padding: 10px; border-radius: 6px;">
+                            <div style="font-size: 0.8rem; margin-bottom: 3px; opacity: 0.9;">Цена</div>
+                            <div style="font-weight: 600; font-size: 0.9rem;">
+                                ${product.price ? product.price + ' ₽/' + (product.unit || 'кг') : 'По запросу'}
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="product-actions">
-                        <button onclick="productManager.requestQuote(${product.id})" class="btn">
+                    <div class="product-actions" style="display: flex; gap: 10px; margin-top: auto;">
+                        <button onclick="productManager.requestQuote(${product.id})" 
+                                style="flex: 1; background: var(--accent-blue); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 500;">
                             <i class="fas fa-quote-left"></i> Запросить цену
                         </button>
-                        <button onclick="productManager.showProductDetails(${product.id})" class="btn btn-outline">
+                        <button onclick="productManager.showProductDetails(${product.id})" 
+                                style="flex: 1; background: white; color: var(--accent-blue); border: 2px solid var(--accent-blue); padding: 12px; border-radius: 6px; cursor: pointer; font-weight: 500;">
                             <i class="fas fa-info-circle"></i> Подробнее
                         </button>
                     </div>
@@ -720,32 +634,41 @@ class ProductManager {
         
         // Предыдущая страница
         if (this.currentPage > 1) {
-            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage - 1})">
+            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage - 1})"
+                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">
                         <i class="fas fa-chevron-left"></i>
                     </button>`;
         }
         
         // Первая страница
         if (start > 1) {
-            html += `<button class="page-btn" onclick="productManager.goToPage(1)">1</button>`;
-            if (start > 2) html += `<span class="pagination-ellipsis">...</span>`;
+            html += `<button class="page-btn" onclick="productManager.goToPage(1)"
+                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">1</button>`;
+            if (start > 2) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
         }
         
         // Страницы
         for (let i = start; i <= end; i++) {
             html += `<button class="page-btn ${i === this.currentPage ? 'active' : ''}" 
-                        onclick="productManager.goToPage(${i})">${i}</button>`;
+                        onclick="productManager.goToPage(${i})"
+                        style="background: ${i === this.currentPage ? 'var(--accent-teal)' : 'var(--light-gray)'}; 
+                               color: ${i === this.currentPage ? 'white' : 'var(--primary-dark)'};
+                               border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: ${i === this.currentPage ? '600' : '400'};">
+                        ${i}
+                    </button>`;
         }
         
         // Последняя страница
         if (end < this.totalPages) {
-            if (end < this.totalPages - 1) html += `<span class="pagination-ellipsis">...</span>`;
-            html += `<button class="page-btn" onclick="productManager.goToPage(${this.totalPages})">${this.totalPages}</button>`;
+            if (end < this.totalPages - 1) html += `<span style="padding: 12px 5px; color: var(--dark-gray);">...</span>`;
+            html += `<button class="page-btn" onclick="productManager.goToPage(${this.totalPages})"
+                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">${this.totalPages}</button>`;
         }
         
         // Следующая страница
         if (this.currentPage < this.totalPages) {
-            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage + 1})">
+            html += `<button class="page-btn" onclick="productManager.goToPage(${this.currentPage + 1})"
+                     style="background: var(--light-gray); border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;">
                         <i class="fas fa-chevron-right"></i>
                     </button>`;
         }
@@ -763,9 +686,10 @@ class ProductManager {
                 color: var(--dark-gray);
                 font-weight: 600;
                 font-size: 1.1rem;
-                padding: 10px;
-                background: var(--light-gray);
+                padding: 12px;
+                background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
                 border-radius: 8px;
+                border-left: 4px solid var(--accent-teal);
             `;
         }
     }
@@ -844,11 +768,11 @@ class ProductManager {
         if (!container) return;
         
         container.innerHTML = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Ошибка</h3>
-                <p>${this.escapeHtml(message)}</p>
-                <button onclick="productManager.loadProducts(1)" class="btn">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 20px;"></i>
+                <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Ошибка</h3>
+                <p style="color: var(--dark-gray); margin-bottom: 20px;">${this.escapeHtml(message)}</p>
+                <button onclick="productManager.loadProducts(1)" class="btn" style="background: var(--accent-teal); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
                     <i class="fas fa-sync-alt"></i> Повторить
                 </button>
             </div>
@@ -861,8 +785,10 @@ class ProductManager {
         try {
             this.showLoadingModal();
             
-            const productDetail = await this.api.fetchProductDetail(productId);
+            // Имитируем задержку сети
+            await new Promise(resolve => setTimeout(resolve, 500));
             
+            const productDetail = await this.api.fetchProductDetail(productId);
             this.showDetailModal(productDetail);
             
         } catch (error) {
@@ -872,17 +798,36 @@ class ProductManager {
     }
     
     showLoadingModal() {
-        this.closeModal(); // Закрываем предыдущее модальное окно
+        this.closeModal();
         
         const modal = document.createElement('div');
         modal.id = 'productDetailModal';
-        modal.className = 'modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(3px);
+        `;
+        
         modal.innerHTML = `
-            <div class="modal-content">
-                <div class="loading-spinner"></div>
-                <h3>Загрузка данных...</h3>
-                <p>Получение информации о товаре</p>
+            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; min-width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div class="loading-spinner" style="width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid var(--accent-teal); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+                <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Загрузка данных...</h3>
+                <p style="color: var(--dark-gray);">Получение информации о товаре</p>
             </div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
         `;
         
         document.body.appendChild(modal);
@@ -894,71 +839,61 @@ class ProductManager {
         if (!modal) return;
         
         const specsHTML = productDetail.specifications ? `
-            <div class="modal-section">
-                <h4>Характеристики</h4>
-                <div class="specs-grid">
+            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--light-gray);">
+                <h4 style="color: var(--primary-dark); margin-bottom: 15px; border-bottom: 2px solid var(--accent-teal); padding-bottom: 5px;">
+                    Характеристики
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
                     ${Object.entries(productDetail.specifications).map(([key, value]) => `
-                        <div class="spec-item-modal">
-                            <div class="spec-key">${key}</div>
-                            <div class="spec-value">${value}</div>
+                        <div style="background: var(--light-gray); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent-teal);">
+                            <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px; font-weight: 500;">${key}</div>
+                            <div style="font-weight: 600; color: var(--primary-dark);">${value}</div>
                         </div>
                     `).join('')}
                 </div>
             </div>
         ` : '';
         
-        const filesHTML = productDetail.files && productDetail.files.length > 0 ? `
-            <div class="modal-section">
-                <h4>Документация</h4>
-                <div class="files-grid">
-                    ${productDetail.files.map(file => `
-                        <a href="${file.url}" class="file-link" target="_blank">
-                            <i class="fas fa-file-pdf"></i>
-                            <span>${file.name}</span>
-                            ${file.size ? `<small>(${file.size})</small>` : ''}
-                        </a>
-                    `).join('')}
-                </div>
-            </div>
-        ` : '';
-        
         modal.innerHTML = `
-            <div class="modal-content detailed">
-                <button onclick="productManager.closeModal()" class="modal-close">
+            <div style="background: white; padding: 30px; border-radius: 12px; 
+                        max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative;
+                        box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <button onclick="productManager.closeModal()" style="position: absolute; top: 15px; right: 15px;
+                        background: none; border: none; font-size: 1.5rem; color: var(--dark-gray); cursor: pointer; padding: 5px; border-radius: 4px;">
                     <i class="fas fa-times"></i>
                 </button>
                 
-                <h2>${this.escapeHtml(productDetail.name)}</h2>
+                <h2 style="color: var(--primary-dark); margin-bottom: 15px; padding-right: 30px; font-size: 1.5rem;">${productDetail.name}</h2>
                 
-                <div class="modal-row">
-                    <div class="modal-column">
-                        <div class="info-card">
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-label">CAS номер</div>
-                                    <div class="info-value">${productDetail.cas_number || 'Не указан'}</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 20px;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <div style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); padding: 20px; border-radius: 8px; border: 1px solid var(--light-gray);">
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                                <div>
+                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">CAS номер</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark); background: #e6f7ff; padding: 5px 10px; border-radius: 4px;">${productDetail.cas_number || 'Не указан'}</div>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-label">Формула</div>
-                                    <div class="info-value">${productDetail.formula || 'Не указана'}</div>
+                                <div>
+                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Формула</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark); background: #f0f9ff; padding: 5px 10px; border-radius: 4px;">${productDetail.formula || 'Не указана'}</div>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-label">Производитель</div>
-                                    <div class="info-value">${productDetail.manufacturer || 'Не указан'}</div>
+                                <div>
+                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Производитель</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark); background: #f5f3ff; padding: 5px 10px; border-radius: 4px;">${productDetail.manufacturer || 'Не указан'}</div>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-label">Упаковка</div>
-                                    <div class="info-value">${productDetail.packaging || 'По запросу'}</div>
+                                <div>
+                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Упаковка</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark); background: #ecfdf5; padding: 5px 10px; border-radius: 4px;">${productDetail.packaging || 'По запросу'}</div>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-label">Остаток</div>
-                                    <div class="info-value">
+                                <div>
+                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Остаток</div>
+                                    <div style="font-weight: 600; color: var(--primary-dark); background: #fef3c7; padding: 5px 10px; border-radius: 4px;">
                                         ${productDetail.stock ? this.formatNumber(productDetail.stock) + ' ' + (productDetail.unit || 'кг') : 'Под заказ'}
                                     </div>
                                 </div>
-                                <div class="info-item">
-                                    <div class="info-label">Цена</div>
-                                    <div class="info-value price-highlight">
+                                <div>
+                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Цена</div>
+                                    <div style="font-weight: 600; color: white; background: linear-gradient(135deg, var(--accent-teal), #0d9488); padding: 5px 10px; border-radius: 4px;">
                                         ${productDetail.price ? productDetail.price + ' ₽/' + (productDetail.unit || 'кг') : 'По запросу'}
                                     </div>
                                 </div>
@@ -966,22 +901,23 @@ class ProductManager {
                         </div>
                     </div>
                     
-                    <div class="modal-column">
-                        <div class="description-card">
-                            <h4>Описание</h4>
-                            <p>${this.escapeHtml(productDetail.description)}</p>
+                    <div style="flex: 1; min-width: 250px;">
+                        <div style="background: var(--light-gray); padding: 20px; border-radius: 8px; height: 100%;">
+                            <h4 style="color: var(--primary-dark); margin-bottom: 15px; font-size: 1.1rem;">Описание</h4>
+                            <p style="color: var(--text-dark); line-height: 1.6;">${productDetail.description}</p>
                         </div>
                     </div>
                 </div>
                 
                 ${specsHTML}
-                ${filesHTML}
                 
-                <div class="modal-actions">
-                    <button onclick="productManager.requestQuote(${productDetail.id})" class="btn btn-primary">
+                <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
+                    <button onclick="productManager.requestQuote(${productDetail.id})" 
+                            style="flex: 1; min-width: 200px; background: var(--accent-blue); color: white; border: none; padding: 15px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 1rem;">
                         <i class="fas fa-quote-left"></i> Запросить цену
                     </button>
-                    <button onclick="productManager.closeModal()" class="btn btn-secondary">
+                    <button onclick="productManager.closeModal()" 
+                            style="flex: 1; min-width: 200px; background: white; color: var(--accent-blue); border: 2px solid var(--accent-blue); padding: 15px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 1rem;">
                         <i class="fas fa-times"></i> Закрыть
                     </button>
                 </div>
@@ -994,11 +930,11 @@ class ProductManager {
         if (!modal) return;
         
         modal.innerHTML = `
-            <div class="modal-content error">
-                <i class="fas fa-exclamation-triangle"></i>
-                <h3>Ошибка загрузки</h3>
-                <p>${this.escapeHtml(message)}</p>
-                <button onclick="productManager.closeModal()" class="btn">
+            <div style="background: white; padding: 40px; border-radius: 12px; text-align: center; min-width: 300px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: #dc2626; margin-bottom: 20px;"></i>
+                <h3 style="color: var(--primary-dark); margin-bottom: 10px;">Ошибка загрузки</h3>
+                <p style="color: var(--dark-gray); margin-bottom: 20px;">${this.escapeHtml(message)}</p>
+                <button onclick="productManager.closeModal()" class="btn" style="background: var(--accent-teal); color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer;">
                     <i class="fas fa-times"></i> Закрыть
                 </button>
             </div>
@@ -1032,62 +968,99 @@ class ProductManager {
         
         const modal = document.createElement('div');
         modal.id = 'quoteModal';
-        modal.className = 'modal-overlay';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+            backdrop-filter: blur(3px);
+        `;
+        
         modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Запрос цены</h3>
-                    <button onclick="productManager.closeQuoteModal()" class="modal-close">
+            <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid var(--accent-teal);">
+                    <h3 style="color: var(--primary-dark); margin: 0; font-size: 1.3rem;">Запрос цены</h3>
+                    <button onclick="productManager.closeQuoteModal()" style="background: none; border: none; 
+                            font-size: 1.5rem; color: var(--dark-gray); cursor: pointer; padding: 5px; border-radius: 4px;">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
                 
-                <div class="modal-body">
-                    <p class="quote-product-info">
-                        Запрос цены на: <strong>${this.escapeHtml(productName)}</strong> (ID: ${productId})
+                <div style="margin-bottom: 20px;">
+                    <p style="color: var(--dark-gray);">
+                        Запрос цены на: <strong style="color: var(--primary-dark);">${this.escapeHtml(productName)}</strong> 
+                        <br><small style="color: var(--dark-gray);">(ID: ${productId})</small>
                     </p>
-                    
-                    <form id="quoteForm">
-                        <div class="form-group">
-                            <label>Ваше имя *</label>
-                            <input type="text" name="name" required placeholder="Иван Иванов">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Компания *</label>
-                            <input type="text" name="company" required placeholder="ООО 'Пример'">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Email *</label>
-                            <input type="email" name="email" required placeholder="ivan@example.com">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Телефон *</label>
-                            <input type="tel" name="phone" required placeholder="+7 (999) 123-45-67">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Необходимое количество</label>
-                            <input type="number" name="quantity" step="0.01" placeholder="Введите количество">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Комментарий</label>
-                            <textarea name="comment" rows="3" placeholder="Дополнительная информация"></textarea>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-paper-plane"></i> Отправить запрос
-                            </button>
-                            <button type="button" onclick="productManager.closeQuoteModal()" class="btn btn-secondary">
-                                Отмена
-                            </button>
-                        </div>
-                    </form>
                 </div>
+                
+                <form id="quoteForm" style="display: grid; gap: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
+                            Ваше имя *
+                        </label>
+                        <input type="text" name="name" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
+                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="Иван Иванов">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
+                            Компания *
+                        </label>
+                        <input type="text" name="company" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
+                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="ООО 'Пример'">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
+                            Email *
+                        </label>
+                        <input type="email" name="email" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
+                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="ivan@example.com">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
+                            Телефон *
+                        </label>
+                        <input type="tel" name="phone" required style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
+                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="+7 (999) 123-45-67">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
+                            Необходимое количество
+                        </label>
+                        <input type="number" name="quantity" step="0.01" style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
+                               border-radius: 6px; font-size: 1rem; box-sizing: border-box;" placeholder="Введите количество">
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
+                            Комментарий
+                        </label>
+                        <textarea name="comment" rows="3" style="width: 100%; padding: 12px; border: 1px solid var(--medium-gray);
+                                  border-radius: 6px; font-size: 1rem; box-sizing: border-box; resize: vertical;" 
+                                  placeholder="Дополнительная информация"></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button type="submit" style="flex: 1; background: var(--accent-teal); color: white; border: none; padding: 15px; 
+                                border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 1rem;">
+                            <i class="fas fa-paper-plane"></i> Отправить запрос
+                        </button>
+                        <button type="button" onclick="productManager.closeQuoteModal()" style="flex: 1; background: white; color: var(--accent-blue); 
+                                border: 2px solid var(--accent-blue); padding: 15px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 1rem;">
+                            Отмена
+                        </button>
+                    </div>
+                </form>
             </div>
         `;
         
@@ -1111,8 +1084,12 @@ class ProductManager {
                 timestamp: new Date().toISOString()
             };
             
-            // В реальном приложении здесь был бы fetch к API
-            alert(`Запрос отправлен!\n\nТовар: ${productName}\nID: ${productId}\n\nМы свяжемся с вами в ближайшее время.`);
+            // Сохраняем в localStorage для демо-целей
+            const requests = JSON.parse(localStorage.getItem('quoteRequests') || '[]');
+            requests.push(data);
+            localStorage.setItem('quoteRequests', JSON.stringify(requests));
+            
+            alert(`✅ Запрос отправлен!\n\nТовар: ${productName}\nID: ${productId}\n\nМы свяжемся с вами в ближайшее время.`);
             
             this.closeQuoteModal();
         });
@@ -1127,7 +1104,7 @@ class ProductManager {
     }
     
     setupEventListeners() {
-        // Оптимизированный поиск
+        // Поиск с debounce
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             let searchTimeout;
@@ -1139,7 +1116,7 @@ class ProductManager {
             });
         }
         
-        // Остальные фильтры
+        // CAS фильтр
         const casFilter = document.getElementById('casFilter');
         if (casFilter) {
             let casTimeout;
@@ -1151,6 +1128,7 @@ class ProductManager {
             });
         }
         
+        // Фильтр по производителю
         const manufacturerFilter = document.getElementById('manufacturerFilter');
         if (manufacturerFilter) {
             manufacturerFilter.addEventListener('change', () => {
@@ -1158,7 +1136,7 @@ class ProductManager {
             });
         }
         
-        // Обработчик ESC для закрытия модальных окон
+        // Обработчик ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.closeModal();
@@ -1168,113 +1146,13 @@ class ProductManager {
     }
 }
 
-// ==================== СТИЛИ ДЛЯ МОДАЛЬНЫХ ОКОН И КОМПОНЕНТОВ ====================
-const injectStyles = () => {
-    const styles = `
-        /* API статус */
-        .api-status {
-            margin: 20px 0;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .api-status.online {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-        
-        .api-status.offline {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-        }
-        
-        .api-status.loading {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        }
-        
-        /* Модальные окна */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-            padding: 20px;
-        }
-        
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: modalAppear 0.3s ease-out;
-        }
-        
-        @keyframes modalAppear {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .modal-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--dark-gray);
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            transition: all 0.2s;
-        }
-        
-        .modal-close:hover {
-            background: var(--light-gray);
-            color: var(--primary-dark);
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--accent-teal);
-        }
-        
-        .modal-section {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid var(--light-gray);
-        }
-        
-        .modal-section h4 {
-            color: var(--primary-dark);
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-        
-        /* Скелетон загрузки */
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+document.addEventListener('DOMContentLoaded', function() {
+    // Создаем глобальный объект
+    window.productManager = new ProductManager();
+    
+    // Добавляем CSS для скелетона
+    const skeletonStyles = `
         .skeleton {
             background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
             background-size: 200% 100%;
@@ -1287,55 +1165,30 @@ const injectStyles = () => {
         }
         
         .skeleton-line {
-            background: var(--light-gray);
+            background: #e0e0e0;
             border-radius: 4px;
         }
         
-        /* Индикатор загрузки */
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--light-gray);
-            border-top: 3px solid var(--accent-teal);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        .api-status {
+            margin: 20px 0;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Адаптивные стили */
-        @media (max-width: 768px) {
-            .modal-content {
-                padding: 20px;
-                margin: 10px;
-            }
-            
-            .modal-row {
-                flex-direction: column;
-            }
-            
-            .modal-column {
-                width: 100% !important;
-            }
+        .api-status.demo {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
         }
     `;
     
     const styleElement = document.createElement('style');
-    styleElement.textContent = styles;
+    styleElement.textContent = skeletonStyles;
     document.head.appendChild(styleElement);
-};
-
-// ==================== ИНИЦИАЛИЗАЦИЯ ====================
-document.addEventListener('DOMContentLoaded', function() {
-    // Встраиваем стили
-    injectStyles();
-    
-    // Создаем глобальный объект менеджера
-    window.productManager = new ProductManager();
     
     // Добавляем фильтр по производителю если есть сайдбар
     const filtersSidebar = document.querySelector('.filters-sidebar');
@@ -1355,11 +1208,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Добавляем кнопки действий
         const filterActions = document.createElement('div');
         filterActions.className = 'filter-actions';
+        filterActions.style.cssText = 'margin-top: 20px; display: flex; gap: 10px;';
         filterActions.innerHTML = `
-            <button onclick="productManager.applyFilters()" class="btn">
+            <button onclick="productManager.applyFilters()" class="btn" style="flex: 1; background: var(--accent-teal); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer;">
                 <i class="fas fa-check"></i> Применить
             </button>
-            <button onclick="productManager.resetFilters()" class="btn btn-outline">
+            <button onclick="productManager.resetFilters()" class="btn btn-outline" style="flex: 1; background: white; color: var(--accent-blue); border: 2px solid var(--accent-blue); padding: 12px; border-radius: 6px; cursor: pointer;">
                 <i class="fas fa-redo"></i> Сбросить
             </button>
         `;
@@ -1382,12 +1236,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 email: document.getElementById('email').value,
                 product: document.getElementById('product').value,
                 quantity: document.getElementById('quantity').value,
-                message: document.getElementById('message').value
+                message: document.getElementById('message').value,
+                timestamp: new Date().toISOString()
             };
             
-            // В реальном приложении здесь был бы fetch к API
-            console.log('Данные формы контактов:', formData);
-            alert('Спасибо за ваш запрос! Мы свяжемся с вами в ближайшее время.');
+            // Сохраняем в localStorage
+            const contacts = JSON.parse(localStorage.getItem('contactRequests') || '[]');
+            contacts.push(formData);
+            localStorage.setItem('contactRequests', JSON.stringify(contacts));
+            
+            alert('✅ Спасибо за ваш запрос! Мы свяжемся с вами в ближайшее время.');
             
             contactForm.reset();
         });
@@ -1404,12 +1262,18 @@ document.addEventListener('DOMContentLoaded', function() {
             const isActive = navLinks.classList.contains('active');
             
             // Меняем иконку
-            menuIcon.classList.toggle('fa-bars', !isActive);
-            menuIcon.classList.toggle('fa-times', isActive);
+            if (isActive) {
+                menuIcon.classList.remove('fa-bars');
+                menuIcon.classList.add('fa-times');
+            } else {
+                menuIcon.classList.remove('fa-times');
+                menuIcon.classList.add('fa-bars');
+            }
         });
         
         // Закрытие меню при клике на ссылку
-        navLinks.querySelectorAll('a').forEach(link => {
+        const navLinksItems = navLinks.querySelectorAll('a');
+        navLinksItems.forEach(link => {
             link.addEventListener('click', function() {
                 navLinks.classList.remove('active');
                 menuIcon.classList.remove('fa-times');
@@ -1427,7 +1291,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Плавная прокрутка
+    // Плавная прокрутка для якорных ссылок
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
