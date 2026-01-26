@@ -4,51 +4,76 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>chemistrymarket</title>
-        <script src="main.js" defer></script>
+        
+        <!-- Preconnect для внешних ресурсов -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+        <link rel="preconnect" href="https://images.unsplash.com">
+        
+        <!-- DNS Prefetch для API -->
+        <link rel="dns-prefetch" href="http://83.222.18.158">
+        
+        <!-- Критические стили -->
         <link rel="stylesheet" href="style.css">
-        <link rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        
+        <!-- Шрифты с оптимизацией -->
         <link
             href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap"
-            rel="stylesheet">
+            rel="stylesheet" media="print" onload="this.media='all'">
+        <noscript>
+            <link
+                href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap"
+                rel="stylesheet">
+        </noscript>
+        
+        <!-- Font Awesome с отложенной загрузкой -->
+        <link rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+            media="print" onload="this.media='all'">
+        <noscript>
+            <link rel="stylesheet"
+                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        </noscript>
+        
+        <!-- JavaScript с defer -->
+        <script src="main.js" defer></script>
     </head>
     <body>
 
         <header>
-            
-                <a href="#" class="header-logo">
-                    <div class="molecule">
-                        <div class="atom core"></div>
-                        <div class="bond bond-1"></div>
-                        <div class="bond bond-2"></div>
-                        <div class="bond bond-3"></div>
-                        <div class="electron e-1"></div>
-                        <div class="electron e-2"></div>
-                        <div class="electron e-3"></div>
-                    </div>
-                    <div class="logo-text">Chemistry<span
-                            class="logo-accent">Market</span></div>
-                </a>
+            <a href="#" class="header-logo">
+                <div class="molecule">
+                    <div class="atom core"></div>
+                    <div class="bond bond-1"></div>
+                    <div class="bond bond-2"></div>
+                    <div class="bond bond-3"></div>
+                    <div class="electron e-1"></div>
+                    <div class="electron e-2"></div>
+                    <div class="electron e-3"></div>
+                </div>
+                <div class="logo-text">Chemistry<span
+                        class="logo-accent">Market</span></div>
+            </a>
 
-                <button class="mobile-menu-btn" id="mobileMenuBtn">
-                    <i class="fas fa-bars" id="menuIcon"></i>
-                </button>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <i class="fas fa-bars" id="menuIcon"></i>
+            </button>
 
-                <ul class="nav-links" id="navLinks">
-                    <li><a href="#home"><i class="fas fa-home"></i>
-                            Главная</a></li>
-                    <li><a href="#about"><i class="fas fa-building"></i> О
-                            компании</a></li>
-                    <li><a href="#products"><i class="fas fa-flask"></i>
-                            Продукция</a></li>
-                    <li><a href="#advantages"><i class="fas fa-star"></i>
-                            Преимущества</a></li>
-                    <li><a href="#contact"><i class="fas fa-envelope"></i>
-                            Контакты</a></li>
-                    <li><a href="tel:+74951234567"><i class="fas fa-phone"></i>
-                            +7 (495) 123-45-67</a></li>
-                </ul>
-            
+            <ul class="nav-links" id="navLinks">
+                <li><a href="#home"><i class="fas fa-home"></i>
+                        Главная</a></li>
+                <li><a href="#about"><i class="fas fa-building"></i> О
+                        компании</a></li>
+                <li><a href="#products"><i class="fas fa-flask"></i>
+                        Продукция</a></li>
+                <li><a href="#advantages"><i class="fas fa-star"></i>
+                        Преимущества</a></li>
+                <li><a href="#contact"><i class="fas fa-envelope"></i>
+                        Контакты</a></li>
+                <li><a href="tel:+74951234567"><i class="fas fa-phone"></i>
+                        +7 (495) 123-45-67</a></li>
+            </ul>
         </header>
 
         <!-- Hero Section -->
@@ -146,7 +171,11 @@
                     <div class="about-image">
                         <img
                             src="/chemistrymarket/images/c709fcc9204b19956de9bb2b38522b779399587c_18_1500.webp"
-                            alt="Лаборатория ChemistryMarket">
+                            alt="Лаборатория ChemistryMarket"
+                            loading="lazy"
+                            decoding="async"
+                            width="600"
+                            height="500">
                     </div>
                 </div>
             </div>
@@ -508,6 +537,4 @@
         </footer>
 
     </body>
-
 </html>
-
