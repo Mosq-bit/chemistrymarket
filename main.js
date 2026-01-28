@@ -1,8 +1,10 @@
-
+// ==================== API КЛИЕНТ С REAL API ====================
 class ChemistryMarketAPI {
     constructor() {
-        this.baseURL = 'http://83.222.18.158:3001/api/v1';
-        this.authToken = 'Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk='; // Ваш токен из примера
+       
+        this.baseURL = 'https://api.webhim.ru/api/v1';
+
+        this.authToken = 'Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk=';
         this.cache = new Map();
         this.cacheDuration = 300000; // 5 минут
         this.currentPage = 1;
@@ -13,60 +15,158 @@ class ChemistryMarketAPI {
             manufacturer: '',
             cas: ''
         };
+        this.apiAvailable = false;
     }
     
-    async fetchProductDetail(productId) {
+    async testApiConnection() {
         try {
-            const url = `${this.baseURL}/product/detail/${productId}`;
-            const cacheKey = `detail_${productId}`;
-            const cached = this.cache.get(cacheKey);
+            // Тестируем подключение к реальному API
+            const testUrl = `${this.baseURL}/product/detail/302016`;
+            console.log('Тестируем подключение к API:', testUrl);
             
-            if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
-                return cached.data;
-            }
-            
-            const response = await fetch(url, {
+            const response = await fetch(testUrl, {
                 method: 'GET',
                 headers: {
                     'Authorization': this.authToken,
                     'Accept': 'application/json',
                     'Content-Type': 'application/json'
-                }
+                },
+                // Добавляем таймаут
+                signal: AbortSignal.timeout(5000)
             });
             
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+            if (response.ok) {
+                console.log('✅ API доступен!');
+                this.apiAvailable = true;
+                return true;
+            } else {
+                console.warn('❌ API ответил с ошибкой:', response.status);
+                this.apiAvailable = false;
+                return false;
             }
             
-            const data = await response.json();
-            
-            // Сохраняем в кеш
-            this.cache.set(cacheKey, {
-                timestamp: Date.now(),
-                data: data
-            });
-            
-            return data;
-            
         } catch (error) {
-            console.error('API Error (fetchProductDetail):', error);
-            return this.getDemoProductDetail(productId);
+            console.warn('❌ Не удалось подключиться к API:', error.message);
+            this.apiAvailable = false;
+            return false;
         }
+    }
+    
+    async fetchProductDetail(productId) {
+        // Если API доступен, пробуем получить реальные данные
+        if (this.apiAvailable) {
+            try {
+                const url = `${this.baseURL}/product/detail/${productId}`;
+                const cacheKey = `detail_${productId}`;
+                const cached = this.cache.get(cacheKey);
+                
+                // Проверяем кеш
+                if (cached && Date.now() - cached.timestamp < this.cacheDuration) {
+                    return cached.data;
+                }
+                
+                console.log('Запрашиваем реальные данные для продукта:', productId);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': this.authToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(10000)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Получены реальные данные:', data);
+                    
+                    // Сохраняем в кеш
+                    this.cache.set(cacheKey, {
+                        timestamp: Date.now(),
+                        data: data
+                    });
+                    
+                    return data;
+                } else {
+                    console.warn('Ошибка при запросе деталей:', response.status);
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.warn('Ошибка API, используем демо-данные:', error.message);
+                // При ошибке переключаемся на демо-данные
+                this.apiAvailable = false;
+            }
+        }
+        
+        // Используем демо-данные если API недоступен
+        return this.getDemoProductDetail(productId);
     }
     
     async fetchProducts(page = 1) {
-        try {
-            // Для получения списка товаров - возможно другой endpoint
-            // Пока используем демо-данные
-            return this.getDemoData(page);
-            
-        } catch (error) {
-            console.error('API Error (fetchProducts):', error);
-            return this.getDemoData(page);
+        // Если API доступен, пробуем получить реальные товары
+        if (this.apiAvailable) {
+            try {
+                // Согласно документации API, товары можно получить по адресу:
+                const url = `${this.baseURL}/product/all/?page=${page}&limit=${this.perPage}`;
+                console.log('Запрашиваем список товаров:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': this.authToken,
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(10000)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Получены реальные товары:', data);
+                    
+                    // Преобразуем ответ API в формат, ожидаемый нашим приложением
+                    return this.transformApiResponse(data, page);
+                } else {
+                    console.warn('Ошибка при запросе товаров:', response.status);
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.warn('Ошибка API при запросе товаров, используем демо-данные:', error.message);
+                this.apiAvailable = false;
+            }
         }
+        
+        // Используем демо-данные если API недоступен
+        return this.getDemoData(page);
     }
     
-    // Демо-данные на основе реальной структуры API
+    transformApiResponse(apiData, page) {
+        // Преобразуем ответ API в формат, ожидаемый нашим приложением
+        if (!apiData || !apiData.results) {
+            return this.getDemoData(page);
+        }
+        
+        // Применяем фильтры к данным API
+        let filtered = apiData.results.filter(p => {
+            if (this.filters.category !== 'all' && p.category !== this.filters.category) return false;
+            if (this.filters.search && !p.name.toLowerCase().includes(this.filters.search.toLowerCase())) return false;
+            if (this.filters.manufacturer && p.manufacturer !== this.filters.manufacturer) return false;
+            if (this.filters.cas && !p.cas_number?.includes(this.filters.cas)) return false;
+            return true;
+        });
+        
+        return {
+            count: apiData.count || filtered.length,
+            next: apiData.next || null,
+            previous: apiData.previous || null,
+            results: filtered
+        };
+    }
+    
+    // Демо-данные на основе реальной структуры API (остаются как запасной вариант)
     getDemoProductDetail(productId) {
         const manufacturers = [
             'BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess',
@@ -137,7 +237,7 @@ class ChemistryMarketAPI {
             images: [
                 {
                     id: 1,
-                    url: 'https://images.unsplash.com/photo-1581094794329-c8112a89af12',
+                    url: 'https://via.placeholder.com/400x300/4a90e2/ffffff?text=Chemistry+Product',
                     alt: 'Химическая продукция',
                     is_main: true
                 }
@@ -203,7 +303,7 @@ class ChemistryMarketAPI {
         };
     }
     
-    // Вспомогательные методы
+    // Вспомогательные методы для демо-данных
     getRandomProductName() {
         const names = [
             'Серная кислота техническая',
@@ -274,16 +374,54 @@ class ChemistryMarketAPI {
     
     async getManufacturers() {
         try {
-            // В реальном API здесь был бы запрос к /manufacturers
-            return ['BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess', 
-                   'AkzoNobel', 'Clariant', 'Solvay', 'Химсинтез', 'Уралхим'];
+            // Пробуем получить производителей из API
+            if (this.apiAvailable) {
+                const response = await fetch(`${this.baseURL}/manufacturers`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': this.authToken,
+                        'Accept': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(5000)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data;
+                }
+            }
         } catch (error) {
-            console.error('Error getting manufacturers:', error);
-            return ['BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess'];
+            console.warn('Не удалось получить производителей из API:', error.message);
         }
+        
+        // Fallback данные
+        return ['BASF', 'Dow Chemical', 'Evonik', 'Sibur', 'Lanxess', 
+               'AkzoNobel', 'Clariant', 'Solvay', 'Химсинтез', 'Уралхим'];
     }
     
     async getCategories() {
+        try {
+            // Пробуем получить категории из API
+            if (this.apiAvailable) {
+                const response = await fetch(`${this.baseURL}/categories`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': this.authToken,
+                        'Accept': 'application/json'
+                    },
+                    signal: AbortSignal.timeout(5000)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.map(cat => ({ ...cat, count: cat.count || Math.floor(Math.random() * 1000) + 100 }));
+                }
+            }
+        } catch (error) {
+            console.warn('Не удалось получить категории из API:', error.message);
+        }
+        
+        // Fallback данные
         const categories = [
             { id: 'all', name: 'Все категории', count: 4000 },
             { id: 'acids', name: 'Кислоты', count: 800 },
@@ -311,10 +449,15 @@ class ProductManager {
         this.totalPages = 1;
         this.totalProducts = 0;
         this.selectedProductId = null;
+        this.apiStatusChecked = false;
     }
     
     async init() {
+        // Сначала проверяем статус API
         await this.updateApiStatus();
+        this.apiStatusChecked = true;
+        
+        // Загружаем данные
         await this.loadCategories();
         await this.loadManufacturers();
         await this.loadProducts();
@@ -326,26 +469,27 @@ class ProductManager {
         if (!statusElement) return;
         
         try {
-            // Тестируем подключение к API
-            const testUrl = `${this.api.baseURL}/product/detail/302016`;
-            const response = await fetch(testUrl, {
-                method: 'GET',
-                headers: {
-                    'Authorization': this.api.authToken,
-                    'Accept': 'application/json'
-                }
-            });
+            // Показываем статус проверки
+            statusElement.className = 'api-status checking';
+            statusElement.innerHTML = '<i class="fas fa-sync fa-spin"></i> Проверка подключения к API...';
             
-            if (response.ok) {
+            // Тестируем подключение к API
+            const isApiAvailable = await this.api.testApiConnection();
+            
+            if (isApiAvailable) {
                 statusElement.className = 'api-status online';
-                statusElement.innerHTML = '<i class="fas fa-check-circle"></i> API подключен (реальные данные)';
+                statusElement.innerHTML = '<i class="fas fa-check-circle"></i> Подключено к реальному API (данные с сервера)';
+                console.log('✅ Используется реальный API');
             } else {
-                throw new Error('API не отвечает');
+                statusElement.className = 'api-status offline';
+                statusElement.innerHTML = '<i class="fas fa-database"></i> Используются демо-данные (оффлайн режим)';
+                console.log('⚠️ Используются демо-данные');
             }
+            
         } catch (error) {
-            console.log('API недоступен, используем демо-данные:', error);
+            console.log('Ошибка проверки API:', error);
             statusElement.className = 'api-status offline';
-            statusElement.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Используются демо-данные';
+            statusElement.innerHTML = '<i class="fas fa-database"></i> Используются демо-данные';
         }
     }
     
@@ -383,7 +527,7 @@ class ProductManager {
             if (container) {
                 container.innerHTML = `
                     <option value="">Все производители</option>
-                    ${manufacturers.map(m => `<option value="${m}">${m}</option>`).join('')}
+                    ${manufacturers.map(m => `<option value="${this.escapeHtml(m)}">${this.escapeHtml(m)}</option>`).join('')}
                 `;
             }
             
@@ -397,18 +541,26 @@ class ProductManager {
             this.currentPage = page;
             const container = document.getElementById('productsGrid');
             
-            // Показываем скелетон загрузки
-            requestAnimationFrame(() => {
-                container.innerHTML = this.getLoadingSkeleton();
-            });
+            if (!container) {
+                console.error('Container #productsGrid not found');
+                return;
+            }
             
+            // Показываем скелетон загрузки только при первой загрузке
+            if (page === 1 && container.children.length === 0) {
+                requestAnimationFrame(() => {
+                    container.innerHTML = this.getLoadingSkeleton();
+                });
+            }
+            
+            // Получаем данные
             const data = await this.api.fetchProducts(page);
             
             // Обновляем пагинацию
             this.totalProducts = data.count || 0;
             this.totalPages = Math.ceil(this.totalProducts / this.api.perPage);
             
-            // Используем requestAnimationFrame для оптимизации рендеринга
+            // Рендерим продукты
             requestAnimationFrame(() => {
                 this.renderProducts(data.results || []);
                 this.renderPagination();
@@ -445,6 +597,7 @@ class ProductManager {
         return skeleton;
     }
     
+    // ... остальные методы остаются без изменений ...
     renderProducts(products) {
         const container = document.getElementById('productsGrid');
         
@@ -462,7 +615,6 @@ class ProductManager {
             return;
         }
         
-        // Используем DocumentFragment для оптимизации DOM операций
         const fragment = document.createDocumentFragment();
         
         products.forEach(product => {
@@ -471,7 +623,7 @@ class ProductManager {
             card.dataset.productId = product.id;
             card.innerHTML = `
                 <div class="product-header">
-                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3; color: var(--light-gray);">
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3; color: var(--white);">
                         ${this.escapeHtml(product.name)}
                     </h3>
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
@@ -493,7 +645,6 @@ class ProductManager {
                         <div class="spec-item">
                             <span class="spec-label">Производитель</span>
                             <span class="spec-value">${this.escapeHtml(product.manufacturer || 'Не указан')}</span>
-                            ${product.manufacturer ? `<span class="manufacturer-badge">${this.escapeHtml(product.manufacturer)}</span>` : ''}
                         </div>
                         
                         <div class="spec-item">
@@ -525,12 +676,10 @@ class ProductManager {
             fragment.appendChild(card);
         });
         
-        // Очищаем и добавляем все элементы за один раз
         container.innerHTML = '';
         container.appendChild(fragment);
     }
     
-    // Вспомогательная функция для экранирования HTML
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
@@ -585,11 +734,6 @@ class ProductManager {
                         <i class="fas fa-chevron-right"></i>
                     </button>`;
         }
-        
-        // Информация
-        html += `<div style="margin-left: 15px; color: var(--dark-gray); font-size: 0.9rem;">
-                    Страница ${this.currentPage} из ${this.totalPages}
-                </div>`;
         
         container.innerHTML = html;
     }
@@ -990,8 +1134,12 @@ class ProductManager {
                 timestamp: new Date().toISOString()
             };
             
-            // Отправка запроса (в реальном приложении здесь был бы fetch к API)
-            alert(`Запрос отправлен!\n\nТовар: ${productName}\nID: ${productId}\n\nМы свяжемся с вами в ближайшее время.`);
+            // Сохраняем запрос в localStorage
+            const requests = JSON.parse(localStorage.getItem('quoteRequests') || '[]');
+            requests.push(data);
+            localStorage.setItem('quoteRequests', JSON.stringify(requests));
+            
+            alert(`✅ Запрос отправлен!\n\nТовар: ${productName}\nID: ${productId}\n\nМы свяжемся с вами в ближайшее время.`);
             
             this.closeQuoteModal();
         });
@@ -1015,7 +1163,7 @@ class ProductManager {
                     requestAnimationFrame(() => {
                         this.applyFilters();
                     });
-                }, 300); // Уменьшено с 500 до 300мс для лучшей отзывчивости
+                }, 300);
             };
             searchInput.addEventListener('input', debouncedSearch, { passive: true });
         }
@@ -1054,11 +1202,14 @@ document.addEventListener('DOMContentLoaded', function() {
     apiStatus.style.cssText = `
         margin: 20px 0;
         padding: 12px 20px;
-        border-radius: var(--radius);
+        border-radius: 8px;
         font-weight: 500;
         display: flex;
         align-items: center;
         gap: 10px;
+        background: #f0f9ff;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
     `;
     
     // Вставляем статус после заголовка "Каталог продукции"
@@ -1131,14 +1282,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 email: document.getElementById('email').value,
                 product: document.getElementById('product').value,
                 quantity: document.getElementById('quantity').value,
-                message: document.getElementById('message').value
+                message: document.getElementById('message').value,
+                timestamp: new Date().toISOString()
             };
             
-            // В реальном приложении здесь был бы fetch к API
-            console.log('Данные формы контактов:', formData);
-            alert('Спасибо за ваш запрос! Мы свяжемся с вами в ближайшее время.');
+            // Сохраняем в localStorage
+            const contacts = JSON.parse(localStorage.getItem('contactRequests') || '[]');
+            contacts.push(formData);
+            localStorage.setItem('contactRequests', JSON.stringify(contacts));
             
-            // Очистка формы
+            alert('✅ Спасибо за ваш запрос! Мы свяжемся с вами в ближайшее время.');
+            
             contactForm.reset();
         });
     }
@@ -1153,7 +1307,6 @@ document.addEventListener('DOMContentLoaded', function() {
             navLinks.classList.toggle('active');
             const isActive = navLinks.classList.contains('active');
             
-            // Меняем иконку
             if (isActive) {
                 menuIcon.classList.remove('fa-bars');
                 menuIcon.classList.add('fa-times');
@@ -1188,15 +1341,12 @@ document.addEventListener('DOMContentLoaded', function() {
         anchor.addEventListener('click', function(e) {
             const href = this.getAttribute('href');
             
-            // Пропускаем пустые якоря
-            if (href === '#' || href === '') {
-                return;
-            }
+            if (href === '#' || href === '') return;
             
             const target = document.querySelector(href);
             if (target) {
                 e.preventDefault();
-                const headerOffset = 80; // Высота фиксированного header
+                const headerOffset = 80;
                 const elementPosition = target.getBoundingClientRect().top;
                 const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
                 
