@@ -4,19 +4,19 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>chemistrymarket</title>
-        
+
         <!-- Preconnect для внешних ресурсов -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="preconnect" href="https://cdnjs.cloudflare.com">
         <link rel="preconnect" href="https://images.unsplash.com">
-        
+
         <!-- DNS Prefetch для API -->
         <link rel="dns-prefetch" href="http://83.222.18.158">
-        
+
         <!-- Критические стили -->
         <link rel="stylesheet" href="style.css">
-        
+
         <!-- Шрифты с оптимизацией -->
         <link
             href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap"
@@ -26,7 +26,7 @@
                 href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap"
                 rel="stylesheet">
         </noscript>
-        
+
         <!-- Font Awesome с отложенной загрузкой -->
         <link rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -35,7 +35,7 @@
             <link rel="stylesheet"
                 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         </noscript>
-        
+
         <!-- JavaScript с defer -->
         <script src="main.js" defer></script>
     </head>
@@ -170,7 +170,7 @@
                     </div>
                     <div class="about-image">
                         <img
-                            src="/chemistrymarket/images/c709fcc9204b19956de9bb2b38522b779399587c_18_1500.webp"
+                            src="images/c709fcc9204b19956de9bb2b38522b779399587c_18_1500.webp"
                             alt="Лаборатория ChemistryMarket"
                             loading="lazy"
                             decoding="async"
@@ -306,6 +306,27 @@
                             Наша команда экспертов поможет подобрать оптимальное
                             решение для вашего бизнеса.</p>
 
+                        <div class="requirements-box">
+                            <h4><i class="fas fa-exclamation-circle"></i>
+                                Условия заказа</h4>
+                            <ul>
+                                <li><i class="fas fa-shipping-fast"></i>
+                                    <strong>Отгрузка товара:</strong> Товары
+                                    отгружаем кратно упаковкам.</li>
+                                <li><i class="fas fa-vial"></i> <strong>Пробники
+                                        и образцы:</strong> Пробники и образцы
+                                    отсутствуют.</li>
+                                <li><i class="fas fa-ruble-sign"></i>
+                                    <strong>Минимальная сумма заказа:</strong>
+                                    от 15000 руб.</li>
+                                <li><i class="fas fa-info-circle"></i>
+                                    <strong>Внимание:</strong> Цена и упаковка
+                                    товара, указанные в карточке товара на
+                                    сайте, могут отличаться от фактических,
+                                    указываемых в счёте на оплату.</li>
+                            </ul>
+                        </div>
+
                         <div class="contact-details">
                             <div class="contact-item">
                                 <div class="contact-icon">
@@ -374,72 +395,113 @@
                     </div>
 
                     <div class="contact-form">
-                        <h3>Отправить запрос</h3>
-                        <form id="contactForm">
-                            <div class="form-group">
-                                <label for="name">Ваше имя *</label>
-                                <input type="text" id="name"
-                                    class="form-control" required>
+                        <h3>Форма запроса товара</h3>
+                        <form id="quoteForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="quantity">Количество (вес,
+                                        объем) *</label>
+                                    <input type="text" id="quantity"
+                                        class="form-control"
+                                        placeholder="Например: 10 кг, 5 л, 100 шт"
+                                        required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="unit">Ед. измерения *</label>
+                                    <select id="unit" class="form-control"
+                                        required>
+                                        <option value selected disabled>Выберите
+                                            единицу измерения</option>
+                                        <option value="кг">Килограммы
+                                            (кг)</option>
+                                        <option value="л">Литры (л)</option>
+                                        <option value="шт">Штуки (шт)</option>
+                                        <option value="м">Метры (м)</option>
+                                        <option value="упак">Упаковки</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <div class="form-group">
-                                <label for="company">Компания *</label>
-                                <input type="text" id="company"
-                                    class="form-control" required>
+                                <label for="purpose">Для изготовления какого
+                                    продукта или для каких целей требуется
+                                    товар? *</label>
+                                <textarea id="purpose" class="form-control"
+                                    rows="3"
+                                    placeholder="Опишите подробно, для чего вам нужен товар"
+                                    required></textarea>
                             </div>
 
-                            <div class="form-group">
-                                <label for="phone">Телефон *</label>
-                                <input type="tel" id="phone"
-                                    class="form-control" required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="specification">Марка,
+                                        концентрация основного вещества в % или
+                                        вид чистоты *</label>
+                                    <input type="text" id="specification"
+                                        class="form-control"
+                                        placeholder="Например: тех, ч, чда, хч, осч"
+                                        required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="name">Имя *</label>
+                                    <input type="text" id="name"
+                                        class="form-control"
+                                        placeholder="Ваше полное имя" required>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="email">Email *</label>
-                                <input type="email" id="email"
-                                    class="form-control" required>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="phone">Телефон *</label>
+                                    <div class="phone-input-container">
+                                        <span class="phone-prefix">+7</span>
+                                        <input type="tel" id="phone"
+                                            class="form-control phone-input"
+                                            placeholder="(999) 123-45-67"
+                                            required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="email">E-mail *</label>
+                                    <input type="email" id="email"
+                                        class="form-control"
+                                        placeholder="example@domain.com"
+                                        required>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="product">Интересующий
-                                    продукт</label>
-                                <input type="text" id="product"
-                                    class="form-control"
-                                    placeholder="Например: Серная кислота">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="city">Город доставки *</label>
+                                    <input type="text" id="city"
+                                        class="form-control"
+                                        placeholder="Например: Москва" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="inn">ИНН *</label>
+                                    <input type="text" id="inn"
+                                        class="form-control"
+                                        placeholder="10 или 12 цифр" required>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="quantity">Примерный объем</label>
-                                <select id="quantity" class="form-control">
-                                    <option value>Выберите объем</option>
-                                    <option value="lab">Лабораторная проба (до 1
-                                        кг)</option>
-                                    <option value="small">Мелкий опт (до 100
-                                        кг)</option>
-                                    <option value="medium">Средний опт (до 1
-                                        тонны)</option>
-                                    <option value="large">Крупный опт (от 1
-                                        тонны)</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="message">Сообщение</label>
-                                <textarea id="message" class="form-control"
-                                    rows="4"
-                                    placeholder="Опишите ваши потребности, область применения, требования к качеству..."></textarea>
-                            </div>
-
-                            <div class="form-group"
-                                style="font-size: 0.9rem; color: var(--dark-gray);">
-                                <input type="checkbox" id="privacy" required>
-                                <label for="privacy">Я согласен с политикой
-                                    конфиденциальности и обработкой персональных
-                                    данных</label>
+                            <div class="form-group consent-checkbox">
+                                <input type="checkbox" id="consent" required>
+                                <label for="consent">Я даю согласие на обработку
+                                    указанных мной персональных данных в
+                                    соответствии с политикой
+                                    конфиденциальности</label>
                             </div>
 
                             <button type="submit" class="btn"
-                                style="width: 100%;">Отправить запрос</button>
+                                style="width: 100%;">
+                                <i class="fas fa-paper-plane"></i> Отправить
+                                запрос
+                            </button>
                         </form>
                     </div>
                 </div>

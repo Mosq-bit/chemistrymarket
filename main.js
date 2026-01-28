@@ -1,9 +1,9 @@
 // ==================== API КЛИЕНТ С REAL API ====================
 class ChemistryMarketAPI {
     constructor() {
-       
+        // ИСПРАВЛЕНО: Используем HTTPS и правильный базовый URL
         this.baseURL = 'https://api.webhim.ru/api/v1';
-
+        // Ваш токен: Basic auth для USER="api" и PASS="your_secret_api_key"
         this.authToken = 'Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk=';
         this.cache = new Map();
         this.cacheDuration = 300000; // 5 минут
@@ -101,7 +101,12 @@ class ChemistryMarketAPI {
         }
         
         // Используем демо-данные если API недоступен
-        return this.getDemoProductDetail(productId);
+        const demoData = this.getDemoProductDetail(productId);
+        // Округляем цену до целого числа
+        if (demoData.price) {
+            demoData.price = Math.round(parseFloat(demoData.price)).toString();
+        }
+        return demoData;
     }
     
     async fetchProducts(page = 1) {
@@ -201,8 +206,9 @@ class ChemistryMarketAPI {
             manufacturer_id: Math.floor(Math.random() * 1000),
             packaging: this.getRandomPackaging(),
             unit: 'кг',
-            price: (Math.random() * 500 + 50).toFixed(2),
-            stock: Math.floor(Math.random() * 10000),
+            // Цена округляется до целого числа при генерации
+            price: Math.round(Math.random() * 500 + 50).toString(),
+            // Убрано поле stock
             min_order: 100,
             lead_time: '3-5 дней',
             specifications: this.generateSpecs(),
@@ -252,8 +258,8 @@ class ChemistryMarketAPI {
                 country: 'Германия'
             },
             similar_products: [
-                { id: 302017, name: 'Аналогичный продукт A', price: '125.00' },
-                { id: 302018, name: 'Аналогичный продукт B', price: '145.00' }
+                { id: 302017, name: 'Аналогичный продукт A', price: '125' },
+                { id: 302018, name: 'Аналогичный продукт B', price: '145' }
             ]
         };
     }
@@ -278,8 +284,9 @@ class ChemistryMarketAPI {
                 manufacturer: productDetail.manufacturer,
                 packaging: productDetail.packaging,
                 unit: productDetail.unit,
+                // Цена уже округлена до целого числа
                 price: productDetail.price,
-                stock: productDetail.stock,
+                // Убрано поле stock
                 description: productDetail.description.substring(0, 150) + '...',
                 min_order: productDetail.min_order,
                 specifications: productDetail.specifications
@@ -462,6 +469,186 @@ class ProductManager {
         await this.loadManufacturers();
         await this.loadProducts();
         this.setupEventListeners();
+        
+        // Инициализируем форму запроса
+        this.initQuoteForm();
+        
+        // Добавляем стили для темы
+        this.addThemeStyles();
+    }
+    
+    addThemeStyles() {
+        // Добавляем стили для темной/светлой темы
+        const style = document.createElement('style');
+        style.textContent = `
+            /* Стили для темной темы */
+            @media (prefers-color-scheme: dark) {
+                .product-card h3 {
+                    color: var(--white, #ffffff) !important;
+                }
+                
+                .product-card {
+                    background: rgba(30, 30, 40, 0.95) !important;
+                    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                }
+                
+                .product-card p,
+                .product-card .spec-label,
+                .product-card .spec-value {
+                    color: rgba(255, 255, 255, 0.9) !important;
+                }
+                
+                .product-card .btn-outline {
+                    border-color: rgba(255, 255, 255, 0.3) !important;
+                    color: rgba(255, 255, 255, 0.9) !important;
+                }
+                
+                .product-card .btn-outline:hover {
+                    background: rgba(255, 255, 255, 0.1) !important;
+                }
+            }
+            
+            /* Стили для светлой темы */
+            @media (prefers-color-scheme: light) {
+                .product-card h3 {
+                    color: var(--primary-dark, #1a202c) !important;
+                }
+                
+                .product-card {
+                    background: var(--white, #ffffff) !important;
+                    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+                }
+                
+                .product-card p,
+                .product-card .spec-label {
+                    color: var(--dark-gray, #4a5568) !important;
+                }
+                
+                .product-card .spec-value {
+                    color: var(--primary-dark, #1a202c) !important;
+                }
+            }
+            
+            /* Общие стили для карточек товаров */
+            .product-card {
+                border-radius: 12px;
+                padding: 20px;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
+            
+            .product-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            }
+            
+            .product-header {
+                margin-bottom: 15px;
+            }
+            
+            .product-header h3 {
+                margin: 0 0 8px 0;
+                font-size: 1.1rem;
+                line-height: 1.3;
+                font-weight: 600;
+                transition: color 0.3s ease;
+            }
+            
+            .product-body {
+                display: flex;
+                flex-direction: column;
+                flex-grow: 1;
+            }
+            
+            .product-specs {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+                margin: 15px 0;
+            }
+            
+            .spec-item {
+                display: flex;
+                flex-direction: column;
+                padding: 10px;
+                border-radius: 8px;
+                background: rgba(0, 0, 0, 0.03);
+            }
+            
+            @media (prefers-color-scheme: dark) {
+                .spec-item {
+                    background: rgba(255, 255, 255, 0.05);
+                }
+            }
+            
+            .spec-label {
+                font-size: 0.8rem;
+                font-weight: 500;
+                margin-bottom: 4px;
+                opacity: 0.8;
+            }
+            
+            .spec-value {
+                font-size: 0.95rem;
+                font-weight: 600;
+            }
+            
+            .spec-value.price {
+                color: var(--accent-teal, #0d9488) !important;
+                font-size: 1rem;
+                font-weight: 700;
+            }
+            
+            .product-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: auto;
+                padding-top: 15px;
+            }
+            
+            .product-actions .btn {
+                flex: 1;
+                padding: 10px;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .product-actions .btn i {
+                margin-right: 6px;
+            }
+            
+            /* Стили для мета-информации */
+            .product-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 5px;
+                font-size: 0.85rem;
+            }
+            
+            .product-meta .cas-number {
+                color: var(--accent-blue, #3b82f6);
+                font-weight: 600;
+                background: rgba(59, 130, 246, 0.1);
+                padding: 3px 8px;
+                border-radius: 4px;
+            }
+            
+            .product-meta .category {
+                color: var(--dark-gray, #6b7280);
+                background: rgba(107, 114, 128, 0.1);
+                padding: 3px 8px;
+                border-radius: 4px;
+            }
+        `;
+        document.head.appendChild(style);
     }
     
     async updateApiStatus() {
@@ -588,7 +775,6 @@ class ProductManager {
                             <div class="skeleton-line" style="height: 40px;"></div>
                             <div class="skeleton-line" style="height: 40px;"></div>
                             <div class="skeleton-line" style="height: 40px;"></div>
-                            <div class="skeleton-line" style="height: 40px;"></div>
                         </div>
                     </div>
                 </div>
@@ -597,7 +783,6 @@ class ProductManager {
         return skeleton;
     }
     
-    // ... остальные методы остаются без изменений ...
     renderProducts(products) {
         const container = document.getElementById('productsGrid');
         
@@ -621,22 +806,30 @@ class ProductManager {
             const card = document.createElement('div');
             card.className = 'product-card';
             card.dataset.productId = product.id;
+            
+            // Округляем цену до целого числа
+            let priceDisplay = 'По запросу';
+            if (product.price) {
+                const priceNum = parseFloat(product.price);
+                if (!isNaN(priceNum)) {
+                    priceDisplay = `${Math.round(priceNum)} ₽/${product.unit || 'кг'}`;
+                }
+            }
+            
             card.innerHTML = `
                 <div class="product-header">
-                    <h3 style="margin: 0 0 8px 0; font-size: 1.1rem; line-height: 1.3; color: var(--white);">
-                        ${this.escapeHtml(product.name)}
-                    </h3>
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
-                        <span style="font-size: 0.85rem; color: var(--accent-blue); font-weight: 600;">
+                    <h3>${this.escapeHtml(product.name)}</h3>
+                    <div class="product-meta">
+                        <span class="cas-number">
                             <i class="fas fa-hashtag"></i> ${this.escapeHtml(product.cas_number || 'CAS не указан')}
                         </span>
-                        <span style="font-size: 0.85rem; color: var(--dark-gray);">
+                        <span class="category">
                             <i class="fas fa-tag"></i> ${this.escapeHtml(product.category_name || product.category)}
                         </span>
                     </div>
                 </div>
                 <div class="product-body">
-                    <p style="color: var(--text-dark); margin-bottom: 15px; font-size: 0.95rem; flex-grow: 1;">
+                    <p>
                         ${this.escapeHtml(product.description)}
                         ${product.formula ? `<br><strong>Формула:</strong> ${this.escapeHtml(product.formula)}` : ''}
                     </p>
@@ -653,19 +846,19 @@ class ProductManager {
                         </div>
                         
                         <div class="spec-item">
-                            <span class="spec-label">Остаток</span>
-                            <span class="spec-value">${product.stock ? product.stock.toLocaleString() + ' ' + (product.unit || 'кг') : 'Под заказ'}</span>
+                            <span class="spec-label">Минимальный заказ</span>
+                            <span class="spec-value">${product.min_order || '100'} ${product.unit || 'кг'}</span>
                         </div>
                         
                         <div class="spec-item">
                             <span class="spec-label">Цена</span>
-                            <span class="spec-value">${product.price ? product.price + ' ₽/' + (product.unit || 'кг') : 'По запросу'}</span>
+                            <span class="spec-value price">${priceDisplay}</span>
                         </div>
                     </div>
                     
                     <div class="product-actions">
                         <button onclick="productManager.requestQuote(${product.id})" class="btn">
-                            <i class="fas fa-quote-left"></i> Запросить цену
+                            <i class="fas fa-quote-left"></i> Заявка
                         </button>
                         <button onclick="productManager.showProductDetails(${product.id})" class="btn btn-outline">
                             <i class="fas fa-info-circle"></i> Подробнее
@@ -914,6 +1107,15 @@ class ProductManager {
             </div>
         ` : '';
         
+        // Округляем цену для отображения в модальном окне
+        let priceDisplay = 'По запросу';
+        if (productDetail.price) {
+            const priceNum = parseFloat(productDetail.price);
+            if (!isNaN(priceNum)) {
+                priceDisplay = `${Math.round(priceNum)} ₽/${productDetail.unit || 'кг'}`;
+            }
+        }
+        
         modal.innerHTML = `
             <div style="background: white; padding: 30px; border-radius: var(--radius-lg); 
                         max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative;">
@@ -945,15 +1147,15 @@ class ProductManager {
                                     <div style="font-weight: 600; color: var(--primary-dark);">${productDetail.packaging || 'По запросу'}</div>
                                 </div>
                                 <div>
-                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Остаток</div>
+                                    <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Минимальный заказ</div>
                                     <div style="font-weight: 600; color: var(--primary-dark);">
-                                        ${productDetail.stock ? productDetail.stock.toLocaleString() + ' ' + (productDetail.unit || 'кг') : 'Под заказ'}
+                                        ${productDetail.min_order || '100'} ${productDetail.unit || 'кг'}
                                     </div>
                                 </div>
                                 <div>
                                     <div style="font-size: 0.9rem; color: var(--dark-gray); margin-bottom: 5px;">Цена</div>
-                                    <div style="font-weight: 600; color: var(--accent-teal);">
-                                        ${productDetail.price ? productDetail.price + ' ₽/' + (productDetail.unit || 'кг') : 'По запросу'}
+                                    <div style="font-weight: 600; color: var(--accent-teal); font-size: 1.1rem;">
+                                        ${priceDisplay}
                                     </div>
                                 </div>
                             </div>
@@ -973,7 +1175,7 @@ class ProductManager {
                 
                 <div style="margin-top: 30px; display: flex; gap: 15px; flex-wrap: wrap;">
                     <button onclick="productManager.requestQuote(${productDetail.id})" class="btn" style="flex: 1; min-width: 200px;">
-                        <i class="fas fa-quote-left"></i> Запросить цену
+                        <i class="fas fa-quote-left"></i> Заявка
                     </button>
                     <button onclick="productManager.closeModal()" class="btn btn-outline" style="flex: 1; min-width: 200px;">
                         <i class="fas fa-times"></i> Закрыть
@@ -1007,149 +1209,220 @@ class ProductManager {
     }
     
     async requestQuote(productId) {
-        // Закрываем модальное окно если открыто
-        this.closeModal();
-        
         // Получаем информацию о товаре
         let productName = 'Товар';
         try {
             const productDetail = await this.api.fetchProductDetail(productId);
             productName = productDetail.name;
+            
+            // Прокручиваем к форме запроса
+            const contactSection = document.getElementById('contact');
+            if (contactSection) {
+                contactSection.scrollIntoView({ behavior: 'smooth' });
+                
+                // Автозаполнение поля спецификации с именем товара
+                const specInput = document.getElementById('specification');
+                if (specInput) {
+                    specInput.value = productDetail.name;
+                    
+                    // Фокус на поле после небольшой задержки
+                    setTimeout(() => {
+                        specInput.focus();
+                    }, 500);
+                }
+            }
         } catch (error) {
-            console.error('Error getting product name:', error);
+            console.error('Error getting product details:', error);
+            
+            // Все равно прокручиваем к форме
+            const contactSection = document.getElementById('contact');
+            if (contactSection) {
+                contactSection.scrollIntoView({ behavior: 'smooth' });
+            }
         }
-        
-        // Показываем форму запроса
-        this.showQuoteForm(productId, productName);
     }
     
-    showQuoteForm(productId, productName) {
-        const modal = document.createElement('div');
-        modal.id = 'quoteModal';
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        `;
+    // Инициализация формы запроса
+    initQuoteForm() {
+        const quoteForm = document.getElementById('quoteForm');
+        if (!quoteForm) return;
         
-        modal.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: var(--radius-lg); max-width: 500px; width: 90%;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 style="color: var(--primary-dark); margin: 0;">Запрос цены</h3>
-                    <button onclick="productManager.closeQuoteModal()" style="background: none; border: none; 
-                            font-size: 1.5rem; color: var(--dark-gray); cursor: pointer;">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
+        // Маска для телефона
+        const phoneInput = document.getElementById('phone');
+        if (phoneInput) {
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
                 
-                <p style="color: var(--dark-gray); margin-bottom: 20px;">
-                    Запрос цены на: <strong>${productName}</strong> (ID: ${productId})
-                </p>
+                if (value.length > 0) {
+                    value = '(' + value.substring(0, 3);
+                }
+                if (value.length > 4) {
+                    value = value.substring(0, 4) + ') ' + value.substring(4, 7);
+                }
+                if (value.length > 9) {
+                    value = value.substring(0, 9) + '-' + value.substring(9, 11);
+                }
+                if (value.length > 12) {
+                    value = value.substring(0, 12) + '-' + value.substring(12, 14);
+                }
                 
-                <form id="quoteForm" style="display: grid; gap: 15px;">
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
-                            Ваше имя *
-                        </label>
-                        <input type="text" name="name" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
-                               border-radius: var(--radius);">
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
-                            Компания *
-                        </label>
-                        <input type="text" name="company" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
-                               border-radius: var(--radius);">
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
-                            Email *
-                        </label>
-                        <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
-                               border-radius: var(--radius);">
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
-                            Телефон *
-                        </label>
-                        <input type="tel" name="phone" required style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
-                               border-radius: var(--radius);">
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
-                            Необходимое количество
-                        </label>
-                        <input type="number" name="quantity" step="0.01" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
-                               border-radius: var(--radius);" placeholder="Введите количество">
-                    </div>
-                    
-                    <div>
-                        <label style="display: block; margin-bottom: 5px; color: var(--primary-dark); font-weight: 500;">
-                            Комментарий
-                        </label>
-                        <textarea name="comment" rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--medium-gray);
-                                  border-radius: var(--radius);" placeholder="Дополнительная информация"></textarea>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px;">
-                        <button type="submit" class="btn" style="flex: 1;">
-                            <i class="fas fa-paper-plane"></i> Отправить запрос
-                        </button>
-                        <button type="button" onclick="productManager.closeQuoteModal()" class="btn btn-outline" style="flex: 1;">
-                            Отмена
-                        </button>
-                    </div>
-                </form>
-            </div>
-        `;
+                e.target.value = value;
+            });
+        }
         
-        document.body.appendChild(modal);
-        
-        // Обработчик формы
-        const form = document.getElementById('quoteForm');
-        form.addEventListener('submit', async (e) => {
+        // Обработчик отправки формы
+        quoteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const formData = new FormData(form);
-            const data = {
-                product_id: productId,
-                product_name: productName,
-                name: formData.get('name'),
-                company: formData.get('company'),
-                email: formData.get('email'),
-                phone: formData.get('phone'),
-                quantity: formData.get('quantity'),
-                comment: formData.get('comment'),
-                timestamp: new Date().toISOString()
-            };
+            // Сброс предыдущих ошибок
+            this.clearFormErrors();
             
-            // Сохраняем запрос в localStorage
-            const requests = JSON.parse(localStorage.getItem('quoteRequests') || '[]');
-            requests.push(data);
-            localStorage.setItem('quoteRequests', JSON.stringify(requests));
+            let isValid = true;
             
-            alert(`✅ Запрос отправлен!\n\nТовар: ${productName}\nID: ${productId}\n\nМы свяжемся с вами в ближайшее время.`);
+            // Валидация всех обязательных полей
+            const fields = [
+                { id: 'quantity', name: 'Количество' },
+                { id: 'unit', name: 'Единица измерения' },
+                { id: 'purpose', name: 'Цель использования' },
+                { id: 'specification', name: 'Марка/концентрация' },
+                { id: 'name', name: 'Имя' },
+                { id: 'phone', name: 'Телефон' },
+                { id: 'email', name: 'Email' },
+                { id: 'city', name: 'Город доставки' },
+                { id: 'inn', name: 'ИНН' }
+            ];
             
-            this.closeQuoteModal();
+            fields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (!element.value.trim()) {
+                    this.showFormError(element, `Пожалуйста, заполните поле "${field.name}"`);
+                    isValid = false;
+                }
+            });
+            
+            // Специфическая валидация телефона
+            if (phoneInput) {
+                const phoneRegex = /^\(\d{3}\) \d{3}-\d{2}-\d{2}$/;
+                if (!phoneRegex.test(phoneInput.value.trim())) {
+                    this.showFormError(phoneInput, 'Пожалуйста, укажите телефон в формате (999) 123-45-67');
+                    isValid = false;
+                }
+            }
+            
+            // Валидация email
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(emailInput.value.trim())) {
+                    this.showFormError(emailInput, 'Пожалуйста, укажите корректный email');
+                    isValid = false;
+                }
+            }
+            
+            // Валидация ИНН
+            const innInput = document.getElementById('inn');
+            if (innInput) {
+                const innRegex = /^\d{10}$|^\d{12}$/;
+                if (!innRegex.test(innInput.value.trim())) {
+                    this.showFormError(innInput, 'Пожалуйста, укажите корректный ИНН (10 или 12 цифр)');
+                    isValid = false;
+                }
+            }
+            
+            // Проверка согласия
+            const consentInput = document.getElementById('consent');
+            if (consentInput && !consentInput.checked) {
+                alert('Необходимо дать согласие на обработку персональных данных');
+                consentInput.focus();
+                isValid = false;
+            }
+            
+            // Если форма валидна, отправляем данные
+            if (isValid) {
+                // Собираем данные формы
+                const formData = {
+                    quantity: document.getElementById('quantity').value,
+                    unit: document.getElementById('unit').value,
+                    purpose: document.getElementById('purpose').value,
+                    specification: document.getElementById('specification').value,
+                    name: document.getElementById('name').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    city: document.getElementById('city').value,
+                    inn: document.getElementById('inn').value,
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Сохраняем в localStorage
+                const quoteRequests = JSON.parse(localStorage.getItem('quoteRequests') || '[]');
+                quoteRequests.push(formData);
+                localStorage.setItem('quoteRequests', JSON.stringify(quoteRequests));
+                
+                // Показываем сообщение об успехе
+                this.showSuccessMessage();
+                
+                // Очищаем форму
+                setTimeout(() => {
+                    quoteForm.reset();
+                    this.clearFormErrors();
+                }, 2000);
+            }
         });
     }
     
-    closeQuoteModal() {
-        const modal = document.getElementById('quoteModal');
-        if (modal) {
-            modal.remove();
+    showFormError(element, message) {
+        element.classList.add('error');
+        
+        // Удаляем старую ошибку если есть
+        const oldError = element.parentNode.querySelector('.error-message');
+        if (oldError) {
+            oldError.remove();
         }
+        
+        // Добавляем новое сообщение об ошибке
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message show';
+        errorDiv.textContent = message;
+        element.parentNode.appendChild(errorDiv);
+    }
+    
+    clearFormErrors() {
+        // Удаляем классы ошибок
+        document.querySelectorAll('.form-control.error').forEach(el => {
+            el.classList.remove('error');
+        });
+        
+        // Удаляем сообщения об ошибках
+        document.querySelectorAll('.error-message').forEach(el => {
+            el.remove();
+        });
+    }
+    
+    showSuccessMessage() {
+        // Создаем или находим элемент для сообщения
+        let successDiv = document.querySelector('.success-message');
+        
+        if (!successDiv) {
+            successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            const quoteForm = document.getElementById('quoteForm');
+            quoteForm.appendChild(successDiv);
+        }
+        
+        successDiv.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <i class="fas fa-check-circle" style="font-size: 3rem; color: #10b981; margin-bottom: 15px;"></i>
+                <h3 style="color: #065f46; margin-bottom: 10px;">Запрос успешно отправлен!</h3>
+                <p style="color: #047857;">Мы свяжемся с вами в ближайшее время.</p>
+            </div>
+        `;
+        
+        successDiv.classList.add('show');
+        
+        // Автоматически скрываем сообщение через 5 секунд
+        setTimeout(() => {
+            successDiv.classList.remove('show');
+        }, 5000);
     }
     
     setupEventListeners() {
@@ -1269,7 +1542,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.productManager = new ProductManager();
     window.productManager.init();
     
-    // Обработчик формы контактов
+    // Обработчик старой формы контактов (если еще существует)
     const contactForm = document.getElementById('contactForm');
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
@@ -1357,6 +1630,32 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Инициализация масок для телефона во всех формах
+    function initPhoneMasks() {
+        document.querySelectorAll('input[type="tel"]').forEach(input => {
+            input.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                
+                if (value.length > 0) {
+                    value = '(' + value.substring(0, 3);
+                }
+                if (value.length > 4) {
+                    value = value.substring(0, 4) + ') ' + value.substring(4, 7);
+                }
+                if (value.length > 9) {
+                    value = value.substring(0, 9) + '-' + value.substring(9, 11);
+                }
+                if (value.length > 12) {
+                    value = value.substring(0, 12) + '-' + value.substring(12, 14);
+                }
+                
+                e.target.value = value;
+            });
+        });
+    }
+    
+    initPhoneMasks();
 });
 
 // ==================== ГЛОБАЛЬНЫЕ ФУНКЦИИ ====================
