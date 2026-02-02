@@ -484,6 +484,13 @@
     color: var(--white) !important;
   }
 
+  .form-control {
+    color: var(--light-gray);
+  }
+  .form-control:focus {
+    background-color: #1e293b;
+  }
+
   .search-box input {
     background: #0f172a;
     color: #f1f5f9;
