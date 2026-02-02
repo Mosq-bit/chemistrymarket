@@ -87,13 +87,11 @@
             font-family: 'Open Sans', sans-serif;
             font-size: 1rem;
             transition: var(--transition);
-            color:var(--light-gray);
+            /* color:!important; */
             
         }
         
-        #manufacturerFilter{
-            background-color: #1e293b;
-        }
+    
 
         .form-control:focus {
             outline: none;
