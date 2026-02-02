@@ -485,7 +485,7 @@
   }
 
   .form-control {
-    color: var(--light-gray);
+    color: var(--dark-gray);
   }
   .form-control:focus {
     /* background-color: #1e293b; */
