@@ -1,7 +1,7 @@
-// ==================== API КЛИЕНТ С REAL API (ИСПРАВЛЕННЫЙ) ====================
+
 class ChemistryMarketAPI {
     constructor() {
-        // ИСПРАВЛЕНО: Используем HTTPS и правильный базовый URL
+
         this.baseURL = 'https://api.webhim.ru/api/v1';
         // Ваш токен: Basic auth для USER="api" и PASS="your_secret_api_key"
         this.authToken = 'Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk=';
@@ -17,7 +17,7 @@ class ChemistryMarketAPI {
         };
         this.apiAvailable = false;
         
-        // ИСПРАВЛЕНИЕ: Карта для хранения соответствия ID → демо-данных
+
         this.demoProductsMap = new Map();
         this.demoProductsInitialized = false;
     }
@@ -56,7 +56,7 @@ class ChemistryMarketAPI {
         }
     }
     
-    // ИСПРАВЛЕНИЕ: Метод инициализации демо-данных
+
     initDemoProducts() {
         if (this.demoProductsInitialized) return;
         
@@ -657,7 +657,7 @@ class ProductManager {
                 }
                 
                 .product-card {
-                    background: rgba(30, 30, 40, 0.95) !important;
+                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
                     border: 1px solid rgba(255, 255, 255, 0.1) !important;
                 }
                 
