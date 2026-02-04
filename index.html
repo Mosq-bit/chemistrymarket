@@ -170,8 +170,7 @@
                     </div>
                     <div class="about-image">
                         <img
-                            src="/chemistrymarket
-/images/c709fcc9204b19956de9bb2b38522b779399587c_18_1500.webp"
+                            src="images/c709fcc9204b19956de9bb2b38522b779399587c_18_1500.webp"
                             alt="Лаборатория ChemistryMarket"
                             loading="lazy"
                             decoding="async"
@@ -400,11 +399,10 @@
                         <form id="quoteForm">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="quantity">Количество (вес,
-                                        объем) *</label>
+                                    <label for="quantity">Количество *</label>
                                     <input type="text" id="quantity"
                                         class="form-control"
-                                        placeholder="Например: 10 кг, 5 л, 100 шт"
+                                        placeholder="Например: 10 "
                                         required>
                                 </div>
 
@@ -416,10 +414,10 @@
                                             единицу измерения</option>
                                         <option value="кг">Килограммы
                                             (кг)</option>
+                                            <option value="л">Граммы (г)</option>
                                         <option value="л">Литры (л)</option>
-                                        <option value="шт">Штуки (шт)</option>
-                                        <option value="м">Метры (м)</option>
-                                        <option value="упак">Упаковки</option>
+                                        <option value="шт">Миллилитры (мл)</option>
+                                        <option value="м">Тонны (тн)</option>
                                     </select>
                                 </div>
                             </div>
@@ -430,12 +428,12 @@
                                     товар? *</label>
                                 <textarea id="purpose" class="form-control"
                                     rows="3"
-                                    placeholder="Опишите подробно, для чего вам нужен товар"
+                                    placeholder="Опишите подробно, для чего Вам нужен товар"
                                     required></textarea>
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group">
+                                <!-- <div class="form-group">
                                     <label for="specification">Марка,
                                         концентрация основного вещества в % или
                                         вид чистоты *</label>
@@ -443,7 +441,7 @@
                                         class="form-control"
                                         placeholder="Например: тех, ч, чда, хч, осч"
                                         required>
-                                </div>
+                                </div> -->
 
                                 <div class="form-group">
                                     <label for="name">Имя *</label>
@@ -456,6 +454,17 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="phone">Телефон *</label>
+                                    <div class="phone-input-container">
+                                        <span class="phone-prefix">+7</span>
+                                        <input type="tel" id="phone"
+                                            class="form-control phone-input"
+                                            placeholder="(999) 123-45-67"
+                                            required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="phone">Дополнительный Телефон *</label>
                                     <div class="phone-input-container">
                                         <span class="phone-prefix">+7</span>
                                         <input type="tel" id="phone"
@@ -600,5 +609,4 @@
         </footer>
 
     </body>
-
 </html>

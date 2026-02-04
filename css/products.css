@@ -488,7 +488,7 @@
     color: var(--dark-gray);
   }
   .form-control:focus {
-    /* background-color: #1e293b; */
+
     color: var(--dark-gray);
   }
 
@@ -510,7 +510,7 @@
   }
 
   .product-card {
-    background: #1e293b;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
     border-color: #334155;
   }
 
