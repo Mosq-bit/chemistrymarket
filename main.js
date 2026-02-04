@@ -1920,7 +1920,7 @@ class ProductManager {
                         <div class="form-group">
                             <label>
                                 <i class="fas fa-phone" style="color: var(--accent-blue); margin-right: 8px;"></i>
-                                Дополнительный Телефон *
+                                Доп. Телефон *
                             </label>
                             <div class="phone-input-container">
                                 <span class="phone-prefix">+7</span>
@@ -2771,7 +2771,7 @@ document.addEventListener("DOMContentLoaded", function () {
             
             .quote-request-form .form-control {
                 background: rgba(255, 255, 255, 0.1);
-                border-color: rgba(255, 255, 255, 0.2);
+                border-color: var(--medium-gray);
                 color: var(--text-dark);
             }
             

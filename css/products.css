@@ -484,9 +484,7 @@
     color: var(--white) !important;
   }
 
-  .form-control {
-    color: var(--dark-gray);
-  }
+
   .form-control:focus {
 
     color: var(--dark-gray);
