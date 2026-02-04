@@ -2709,7 +2709,6 @@ document.addEventListener("DOMContentLoaded", function () {
         
         .quote-request-form .phone-prefix {
             padding: 0 12px;
-            background-color: #f8f9fa;
             border-right: 1px solid var(--medium-gray);
             font-weight: 600;
             color: var(--dark-gray);
