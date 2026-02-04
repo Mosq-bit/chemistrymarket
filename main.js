@@ -1,7 +1,6 @@
 // ==================== API КЛИЕНТ С REAL API (ИСПРАВЛЕННЫЙ) ====================
 class ChemistryMarketAPI {
   constructor() {
-    // ИСПРАВЛЕНО: Используем HTTPS и правильный базовый URL
     this.baseURL = "https://api.webhim.ru/api/v1";
     // Ваш токен: Basic auth для USER="api" и PASS="your_secret_api_key"
     this.authToken = "Basic YXBpOnlvdXJfc2VjcmV0X2FwaV9rZXk=";
